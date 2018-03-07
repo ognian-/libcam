@@ -9,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +24,10 @@ public class PermissionsFragment extends Fragment {
         void onCameraPermissionsGranted();
         void onCameraPermissionsDenied();
         void showRationale(List<String> permissions, Runnable done);
+    }
+
+    public static void attach(AppCompatActivity activity, Listener listener, String tag) {
+        activity.getSupportFragmentManager().beginTransaction().add(new PermissionsFragment().setListener(listener), tag).commit();
     }
 
     public PermissionsFragment() {
