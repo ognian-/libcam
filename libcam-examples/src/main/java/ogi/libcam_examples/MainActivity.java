@@ -5,29 +5,27 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.SurfaceTexture;
-import android.opengl.GLES11Ext;
+import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.SystemClock;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+import android.view.View;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import ogi.libcam.BaseRenderer;
 import ogi.libcam.CaptureService;
+import ogi.libcam.DestroyableGLSurfaceView;
 import ogi.libcam.ExternalTexture;
-import ogi.libcam.GLHelper;
 import ogi.libcam.PermissionsFragment;
-import ogi.libcam.WaitResult;
 
 import static ogi.libcam.GLHelper.glCheck;
 
@@ -35,23 +33,34 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "LibCamExamples";
 
-    private GLSurfaceView mGLSurface;
-
     private CaptureService.CaptureServiceBinder mCapture;
     private final Object mCaptureLock = new Object();
+
+    private GLSurfaceView mCurrent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "onCreate");
+        setContentView(R.layout.activity_main);
 
-        mGLSurface = new GLSurfaceView(this);
-        mGLSurface.setEGLContextClientVersion(2);
-        mGLSurface.setRenderer(new GLSurfaceView.Renderer() {
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl1), Color.RED);
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl2), Color.GREEN);
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl3), Color.BLUE);
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl4), Color.CYAN);
+
+
+        PermissionsFragment.attach(MainActivity.this, mPermissionsListener, "cam_perm");
+
+    }
+
+    private void setupGLSurfaceView(final GLSurfaceView view, final int color) {
+        final AtomicBoolean active = new AtomicBoolean();
+        view.setTag(active);
+        view.setEGLContextClientVersion(2);
+        view.setRenderer(new DestroyableGLSurfaceView.DestroyableRenderer() {
 
             final BaseRenderer renderer;
-            final ExternalTexture texture = new ExternalTexture();
 
             {
                 try {
@@ -63,51 +72,64 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-                Log.d(TAG, "onSurfaceCreated");
-
-                try {
-                    synchronized (mCaptureLock) {
-                        while (mCapture == null) mCaptureLock.wait();
-                    }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
-                mCapture.attachToGLContext(texture);
-
                 renderer.onCreate();
-
             }
 
             @Override
             public void onSurfaceChanged(GL10 gl10, int i, int i1) {
-                Log.d(TAG, "onSurfaceChanged");
-
             }
 
             @Override
             public void onDrawFrame(GL10 gl10) {
-                mCapture.updateTexImage();
-                renderer.onDraw(texture);
+                if (active.get()) {
+                    GLES20.glClearColor(Color.red(color) / 255.0f, Color.green(color) / 255.0f, Color.blue(color) / 255.0f, 1); glCheck();
+                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT); glCheck();
+                    renderer.onDraw();
+                } else {
+                    GLES20.glClearColor(0, 0, 0, 1); glCheck();
+                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT); glCheck();
+                }
+            }
+
+            @Override
+            public void onDestroy() {
+                renderer.onDestroy();
             }
         });
-        mGLSurface.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
-        getWindow().getDecorView().postDelayed(new Runnable() {
+        view.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                setContentView(mGLSurface);
+            public void onClick(View v) {
+                if (mCurrent == view) return;
+                final Runnable activate = new Runnable() {
+                    @Override
+                    public void run() {
+                        mCapture.attachAnotherContext();
+                        active.set(true);
+                    }
+                };
+                if (mCurrent != null) {
+                    final AtomicBoolean activeCurrent = (AtomicBoolean) mCurrent.getTag();
+                    mCurrent.queueEvent(new Runnable() {
+                        @Override
+                        public void run() {
+                            activeCurrent.set(false);
+                            mCapture.attachOriginalContext();
+                            view.queueEvent(activate);
+                        }
+                    });
+                } else {
+                    view.queueEvent(activate);
+                }
+                mCurrent = view;
             }
-        }, 1000);
-
-        PermissionsFragment.attach(MainActivity.this, mPermissionsListener, "cam_perm");
-
+        });
     }
 
-    final CaptureService.Listener mCaptureListener = new CaptureService.Listener() {
+    private final CaptureService.Listener mCaptureListener = new CaptureService.Listener() {
         @Override
         public void onCameraCaptureSessionConfigured(String cameraId) {
-            Log.d(TAG, "onCameraCaptureSessionConfigured");
             mCapture.startPreview();
         }
 
@@ -118,14 +140,12 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onPreviewStarted(String cameraId) {
-            Log.d(TAG, "onPreviewStarted");
         }
     };
 
-    final ServiceConnection mCaptureConnection = new ServiceConnection() {
+    private final ServiceConnection mCaptureConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            Log.d(TAG, "onServiceConnected");
             synchronized (mCaptureLock) {
                 mCapture = (CaptureService.CaptureServiceBinder) iBinder;
                 mCapture.openCamera(mCapture.getFrontCameraId(), mCaptureListener);
@@ -135,18 +155,16 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            Log.d(TAG, "onServiceDisconnected");
             synchronized (mCaptureLock) {
                 mCapture = null;
             }
         }
     };
 
-    final PermissionsFragment.Listener mPermissionsListener = new PermissionsFragment.Listener() {
+    private final PermissionsFragment.Listener mPermissionsListener = new PermissionsFragment.Listener() {
 
         @Override
         public void onCameraPermissionsGranted() {
-            Log.d(TAG, "onCameraPermissionsGranted");
             bindService(new Intent(MainActivity.this, CaptureService.class), mCaptureConnection, Context.BIND_AUTO_CREATE);
         }
 

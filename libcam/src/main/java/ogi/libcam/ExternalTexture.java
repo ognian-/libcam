@@ -1,6 +1,5 @@
 package ogi.libcam;
 
-import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
@@ -10,37 +9,42 @@ import static ogi.libcam.GLHelper.glCheck;
 public class ExternalTexture {
 
     private int mTextureId = -1;
-    private long mThreadId = -1;
     private final Object mLock = new Object();
     private final float[] mTexCoordsMatrix = new float[16];
+    private boolean mFrameAvailable;
 
-    private final SurfaceTexture.OnFrameAvailableListener mListener = new SurfaceTexture.OnFrameAvailableListener() {
-        @Override
-        public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-            synchronized (mLock) {
-                surfaceTexture.getTransformMatrix(mTexCoordsMatrix);
-            }
-        }
-    };
-
-    public SurfaceTexture onCreate(SurfaceTexture surfaceTexture) {
+    public int getId() {
         synchronized (mLock) {
-            if (mTextureId != -1 || mThreadId != -1) throw new IllegalStateException("Must destroy first");
+            return mTextureId;
+        }
+    }
+
+    public void onFrameAvailable(float[] texCoordMatrix) {
+        synchronized (mLock) {
+            System.arraycopy(texCoordMatrix, 0, mTexCoordsMatrix, 0, 16);
+            mFrameAvailable = true;
+            mLock.notifyAll();
+        }
+    }
+
+    public void onCreate() {
+        synchronized (mLock) {
+            if (mTextureId != -1) throw new IllegalStateException("Must destroy first");
             mTextureId = GLHelper.genTextureExternal();
-            if (surfaceTexture == null) {
-                surfaceTexture = new SurfaceTexture(mTextureId);
-            } else {
-                surfaceTexture.attachToGLContext(mTextureId);
-            }
-            surfaceTexture.setOnFrameAvailableListener(mListener);
-            mThreadId = Thread.currentThread().getId();
             Matrix.setIdentityM(mTexCoordsMatrix, 0);
-            return surfaceTexture;
         }
     }
 
     public void onDraw(int uniformTexture, int uniformMatrix, int textureSlot) {
-        synchronized (mLock) {//TODO wait for frame?
+        synchronized (mLock) {
+            /*
+            try {
+                while (!mFrameAvailable) mLock.wait();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            mFrameAvailable = false;
+            */
             GLES20.glUniformMatrix4fv(uniformMatrix, 1, false, mTexCoordsMatrix, 0); glCheck();
             GLES20.glActiveTexture(textureSlot); glCheck();
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureId); glCheck();
@@ -48,23 +52,14 @@ public class ExternalTexture {
         }
     }
 
-    public void onDestroy(SurfaceTexture surfaceTexture) {
+    public void onDestroy() {
         synchronized (mLock) {
-            if (mThreadId != -1 && mThreadId != Thread.currentThread().getId()) throw new IllegalStateException("Called on wrong thread");
             try {
-                if (surfaceTexture != null) {
-                    surfaceTexture.setOnFrameAvailableListener(null);
-                    surfaceTexture.detachFromGLContext();
+                if (mTextureId != -1) {
+                    GLES20.glDeleteTextures(1, new int[]{mTextureId}, 0); glCheck();
                 }
             } finally {
-                try {
-                    if (mTextureId != -1) {
-                        GLES20.glDeleteTextures(1, new int[]{mTextureId}, 0); glCheck();
-                    }
-                } finally {
-                    mTextureId = -1;
-                    mThreadId = -1;
-                }
+                mTextureId = -1;
             }
         }
     }

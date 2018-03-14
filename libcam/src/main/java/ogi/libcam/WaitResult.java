@@ -11,6 +11,7 @@ public class WaitResult {
         synchronized (mLock) {
             mDone = true;
             mResult = result;
+            mException = null;
             mLock.notify();
         }
     }
@@ -19,29 +20,18 @@ public class WaitResult {
         synchronized (mLock) {
             mDone = true;
             mException = exception;
+            mResult = null;
             mLock.notify();
         }
     }
 
-    public Object getResult(boolean reset) throws Exception {
-        synchronized (mLock) {
-            while (!mDone) mLock.wait();
-            try {
+    public Object getResult() {
+        try {
+            synchronized (mLock) {
+                while (!mDone) mLock.wait();
                 if (mException != null) throw mException;
                 return mResult;
-            } finally {
-                if (reset) {
-                    mDone = false;
-                    mResult = null;
-                    mException = null;
-                }
             }
-        }
-    }
-
-    public Object getResultNoThrows(boolean reset) {
-        try {
-            return getResult(reset);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

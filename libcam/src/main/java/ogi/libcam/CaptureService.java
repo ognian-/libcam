@@ -3,7 +3,6 @@ package ogi.libcam;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.ImageFormat;
-import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -16,7 +15,6 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Binder;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
@@ -29,6 +27,8 @@ public class CaptureService extends Service {
     private static final String TAG = "LibCam";
 
     private final CaptureServiceBinder mBinder;
+    private BaseRenderer mRenderer;
+    private EglContextThread mEglContextThread;
 
     private CameraManager mManager;
     private Listener mListener;
@@ -38,7 +38,6 @@ public class CaptureService extends Service {
     private final CameraManager.AvailabilityCallback mAvailabilityCallback = new CameraManager.AvailabilityCallback() {
         @Override
         public void onCameraAvailable(@NonNull String cameraId) {
-            Log.d(TAG, "CaptureService: onCameraAvailable");
             synchronized (mAvailableCameras) {
                 mAvailableCameras.add(cameraId);
                 mAvailableCameras.notifyAll();
@@ -47,7 +46,6 @@ public class CaptureService extends Service {
 
         @Override
         public void onCameraUnavailable(@NonNull String cameraId) {
-            Log.d(TAG, "CaptureService: onCameraUnavailable");
             synchronized (mAvailableCameras) {
                 mAvailableCameras.remove(cameraId);
                 mAvailableCameras.notifyAll();
@@ -58,7 +56,6 @@ public class CaptureService extends Service {
     private final CameraDevice.StateCallback mCameraDeviceStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
-            Log.d(TAG, "CaptureService: onOpened device");
             try {
                 final StreamConfigurationMap configs = mManager.getCameraCharacteristics(camera.getId())
                         .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
@@ -76,7 +73,7 @@ public class CaptureService extends Service {
                 makeSurface(max);
 
                 final ArrayList<Surface> surfaces = new ArrayList<>();
-                surfaces.add(mOutputSurface.getSurface());
+                surfaces.add(mRenderer.getSurface());
 
                 camera.createCaptureSession(surfaces, mCameraCaptureSessionStateCallback, null);
             } catch (CameraAccessException e) {
@@ -87,21 +84,18 @@ public class CaptureService extends Service {
 
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
-            Log.d(TAG, "CaptureService: onDisconnected device");
             destroySurface();
             mListener.onCameraError(camera.getId());
         }
 
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {
-            Log.d(TAG, "CaptureService: onError device");
             destroySurface();
             mListener.onCameraError(camera.getId());
         }
 
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
-            Log.d(TAG, "CaptureService: onClosed device");
             destroySurface();
         }
 
@@ -112,86 +106,70 @@ public class CaptureService extends Service {
 
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "CaptureService: onConfigured");
             mSession = session;
             mListener.onCameraCaptureSessionConfigured(session.getDevice().getId());
         }
 
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "CaptureService: onConfigureFailed");
             mSession = null;
             mListener.onCameraError(session.getDevice().getId());
         }
 
         @Override
         public void onReady(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "CaptureService: onReady");
         }
 
         @Override
         public void onActive(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "CaptureService: onActive");
         }
 
         @Override
         public void onCaptureQueueEmpty(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "CaptureService: onCaptureQueueEmpty");
         }
 
         @Override
         public void onClosed(@NonNull CameraCaptureSession session) {
-            Log.d(TAG, "CaptureService: onClosed session");
         }
 
         @Override
         public void onSurfacePrepared(@NonNull CameraCaptureSession session, @NonNull Surface surface) {
-            Log.d(TAG, "CaptureService: onSurfacePrepared");
         }
 
         //TODO override
 
     };
 
-    private OutputSurface mOutputSurface;
-
     private CameraCaptureSession mSession;
     private final CameraCaptureSession.CaptureCallback mCameraCaptureSessionCaptureCallback = new CameraCaptureSession.CaptureCallback() {
         @Override
         public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-            //Log.d(TAG, "CaptureService: onCaptureStarted");
             //XXX mListener.onPreviewStarted(session.getDevice().getId());
         }
 
         @Override
         public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
-            Log.d(TAG, "CaptureService: onCaptureFailed");
             mListener.onCameraError(session.getDevice().getId());
         }
 
         @Override
         public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
-            //Log.d(TAG, "CaptureService: onCaptureProgressed");
         }
 
         @Override
         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-            //Log.d(TAG, "CaptureService: onCaptureCompleted");
         }
 
         @Override
         public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, int sequenceId, long frameNumber) {
-            Log.d(TAG, "CaptureService: onCaptureSequenceCompleted");
         }
 
         @Override
         public void onCaptureSequenceAborted(@NonNull CameraCaptureSession session, int sequenceId) {
-            Log.d(TAG, "CaptureService: onCaptureSequenceAborted");
         }
 
         @Override
         public void onCaptureBufferLost(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull Surface target, long frameNumber) {
-            Log.d(TAG, "CaptureService: onCaptureBufferLost");
         }
 
         //TODO override
@@ -209,14 +187,17 @@ public class CaptureService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "CaptureService: onCreate");
+        try {
+            mRenderer = new BaseRenderer(getAssets());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         mManager = (CameraManager) getSystemService(CAMERA_SERVICE);
         mManager.registerAvailabilityCallback(mAvailabilityCallback, null);
     }
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "CaptureService: onDestroy");
         if (mManager != null) {
             mManager.unregisterAvailabilityCallback(mAvailabilityCallback);
         }
@@ -226,17 +207,13 @@ public class CaptureService extends Service {
 
     private void makeSurface(Size size) {
         destroySurface();
-        try {
-            mOutputSurface = new OutputSurface(new BaseRenderer(getAssets()), size);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        mEglContextThread = new EglContextThread(mRenderer, size);
     }
 
     private void destroySurface() {
-        if (mOutputSurface != null) {
-            mOutputSurface.release();
-            mOutputSurface = null;
+        if (mEglContextThread != null) {
+            mEglContextThread.release();
+            mEglContextThread = null;
         }
     }
 
@@ -250,7 +227,6 @@ public class CaptureService extends Service {
     public class CaptureServiceBinder extends Binder {
 
         public boolean openCamera(String cameraId, @NonNull Listener listener) {
-            Log.d(TAG, "CaptureService: OPENING CAMERA");
             //TODO close previous
             mListener = listener;
             try {
@@ -264,10 +240,9 @@ public class CaptureService extends Service {
         }
 
         public boolean startPreview() {
-            Log.d(TAG, "CaptureService: STARTING PREVIEW");
             try {
                 final CaptureRequest.Builder request = mSession.getDevice().createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                request.addTarget(mOutputSurface.getSurface());
+                request.addTarget(mRenderer.getSurface());
                 request.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                 request.set(CaptureRequest.CONTROL_AE_LOCK, false);
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
@@ -280,14 +255,13 @@ public class CaptureService extends Service {
             }
         }
 
-        public void attachToGLContext(ExternalTexture texture) {
-            mOutputSurface.getSurface();
-            mOutputSurface.detachFromGLContext();
-            mOutputSurface.attachToGLContext(texture);
+        public void attachAnotherContext() {
+            mRenderer.detach();
+            mRenderer.attachAnother();
         }
 
-        public void updateTexImage() {
-            mOutputSurface.updateTexImage();
+        public void attachOriginalContext() {
+            mRenderer.attach();
         }
 
         public String getBackCameraId() {
