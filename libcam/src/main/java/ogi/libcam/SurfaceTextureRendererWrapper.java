@@ -61,6 +61,7 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
 
     @Override
     public void onCreate() {
+        GLHelper.signalOnCreated(this);
         synchronized (mLock) {
             mSurfaceTexture.onCreate();
             mAttached = true;
@@ -69,7 +70,7 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
     }
 
     @Override
-    public boolean onDraw(BaseTextureInput ... inputs) {
+    public void onDraw(BaseTextureInput ... inputs) {
         synchronized (mLock) {
             if (mAttach != null) {
                 mSurfaceTexture.attach();
@@ -87,15 +88,19 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
                 mRenderer.onDraw(mSurfaceTexture.getTexture(true));
             }
         }
-        return true;
     }
 
     @Override
     public void onDestroy() {
+        GLHelper.signalOnDestroyed(this);
         mRenderer.onDestroy();
         synchronized (mLock) {
-            mSurfaceTexture.onDestroy();
-            mAttached = false;
+            if (mAttached) {
+                mSurfaceTexture.onDestroy();
+                mAttached = false;
+            } else {
+                mSurfaceTexture.onDestroyForced();
+            }
         }
     }
 

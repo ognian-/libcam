@@ -15,6 +15,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Binder;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
@@ -53,10 +54,12 @@ public class CaptureService extends Service {
         }
     };
 
+    private CameraDevice mCameraDevice;
     private final CameraDevice.StateCallback mCameraDeviceStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
             try {
+                mCameraDevice = camera;
                 final StreamConfigurationMap configs = mManager.getCameraCharacteristics(camera.getId())
                         .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
@@ -84,6 +87,7 @@ public class CaptureService extends Service {
 
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
+            mCameraDevice = null;
             destroySurface();
             mListener.onCameraError(camera.getId());
         }
@@ -96,6 +100,7 @@ public class CaptureService extends Service {
 
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
+            mCameraDevice = null;
             destroySurface();
         }
 
@@ -186,6 +191,7 @@ public class CaptureService extends Service {
 
     @Override
     public void onCreate() {
+        GLHelper.signalOnCreated(this);
         super.onCreate();
         try {
             mRenderer = new SurfaceTextureRendererWrapper(new PreviewRenderer(getAssets()));
@@ -198,8 +204,17 @@ public class CaptureService extends Service {
 
     @Override
     public void onDestroy() {
+        GLHelper.signalOnDestroyed(this);
         if (mManager != null) {
             mManager.unregisterAvailabilityCallback(mAvailabilityCallback);
+        }
+        if (mSession != null) {
+            mSession.close();
+            mSession = null;
+        }
+        if (mCameraDevice != null) {
+            mCameraDevice.close();
+            mCameraDevice = null;
         }
         destroySurface();
         super.onDestroy();

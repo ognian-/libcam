@@ -17,17 +17,18 @@ public class PreviewRenderer implements EglContextThread.Renderer, DestroyableGL
 
     @Override
     public void onCreate() {
+        GLHelper.signalOnCreated(this);
         mBlit.onCreate();
     }
 
     @Override
-    public boolean onDraw(BaseTextureInput ... inputs) {
+    public void onDraw(BaseTextureInput ... inputs) {
         mBlit.onDraw(inputs[0]);
-        return true;
     }
 
     @Override
     public void onDestroy() {
+        GLHelper.signalOnDestroyed(this);
         mBlit.onDestroy();
     }
 

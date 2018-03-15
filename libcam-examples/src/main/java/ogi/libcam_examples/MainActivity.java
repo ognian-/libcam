@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import ogi.libcam.BaseTextureInput;
 import ogi.libcam.CaptureService;
+import ogi.libcam.GLHelper;
 import ogi.libcam.PermissionsFragment;
 import ogi.libcam.PreviewRenderer;
 
@@ -26,21 +28,33 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "LibCamExamples";
 
+    private boolean mPermissions = false;
     private CaptureService.CaptureServiceBinder mCapture;
     private final Object mCaptureLock = new Object();
 
+    private GLSurfaceView mGL1;
+    private GLSurfaceView mGL2;
+    private GLSurfaceView mGL3;
+    private GLSurfaceView mGL4;
     private GLSurfaceView mCurrent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        GLHelper.assertClean();
+
         setContentView(R.layout.activity_main);
 
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl1));
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl2));
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl3));
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl4));
+        mGL1 = (GLSurfaceView)findViewById(R.id.gl1);
+        mGL2 = (GLSurfaceView)findViewById(R.id.gl2);
+        mGL3 = (GLSurfaceView)findViewById(R.id.gl3);
+        mGL4 = (GLSurfaceView)findViewById(R.id.gl4);
+
+        setupGLSurfaceView(mGL1);
+        setupGLSurfaceView(mGL2);
+        setupGLSurfaceView(mGL3);
+        setupGLSurfaceView(mGL4);
 
         PermissionsFragment.attach(MainActivity.this, mPermissionsListener, "cam_perm");
 
@@ -69,7 +83,16 @@ public class MainActivity extends AppCompatActivity {
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mCurrent == view) return;
+                if (mCurrent == view) {
+                    mCurrent = null;
+                    view.queueEvent(new Runnable() {
+                        @Override
+                        public void run() {
+                            mCapture.attachOriginalContext();
+                        }
+                    });
+                    return;
+                }
 
                 final Runnable activate = new Runnable() {
                     @Override
@@ -93,6 +116,44 @@ public class MainActivity extends AppCompatActivity {
                 mCurrent = view;
             }
         });
+    }
+
+    private void bindService() {
+        if (mCapture != null) return;
+        if (!mPermissions) return;
+        bindService(new Intent(MainActivity.this, CaptureService.class), mCaptureConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStart() {
+        synchronized (mCaptureLock) {
+            bindService();
+        }
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        unbindService(mCaptureConnection);
+        super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mGL1.onResume();
+        mGL2.onResume();
+        mGL3.onResume();
+        mGL4.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        mGL1.onPause();
+        mGL2.onPause();
+        mGL3.onPause();
+        mGL4.onPause();
+        super.onPause();
     }
 
     private final CaptureService.Listener mCaptureListener = new CaptureService.Listener() {
@@ -133,11 +194,17 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onCameraPermissionsGranted() {
-            bindService(new Intent(MainActivity.this, CaptureService.class), mCaptureConnection, Context.BIND_AUTO_CREATE);
+            synchronized (mCaptureLock) {
+                mPermissions = true;
+                bindService();
+            }
         }
 
         @Override
         public void onCameraPermissionsDenied() {
+            synchronized (mCaptureLock) {
+                mPermissions = false;
+            }
             new AlertDialog.Builder(MainActivity.this)
                     .setMessage("This app can't run without camera permissions")
                     .setCancelable(false)

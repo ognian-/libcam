@@ -7,6 +7,8 @@ import static ogi.libcam.GLHelper.glCheck;
 
 public abstract class BaseTextureInput {
 
+    private static final String TAG = "LibCam";
+
     private int mTextureId = -1;
     private final Object mLock = new Object();
     private final float[] mTexCoordsMatrix = new float[16];
@@ -24,6 +26,7 @@ public abstract class BaseTextureInput {
     }
 
     public int onCreate() {
+        GLHelper.signalOnCreated(this);
         synchronized (mLock) {
             if (mTextureId != -1) throw new IllegalStateException("Must destroy first");
             mTextureId = genTextureId();
@@ -34,14 +37,13 @@ public abstract class BaseTextureInput {
 
     public void onDraw(int uniformTexture, int uniformMatrix, int textureSlot) {
         synchronized (mLock) {
-
             try {
-                while (!mFrameAvailable) mLock.wait();
+                while (mTextureId != -1 && !mFrameAvailable) mLock.wait();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
             mFrameAvailable = false;
-
+            if (mTextureId == -1) return;
             GLES20.glUniformMatrix4fv(uniformMatrix, 1, false, mTexCoordsMatrix, 0); glCheck();
             GLES20.glActiveTexture(textureSlot); glCheck();
             GLES20.glBindTexture(getTarget(), mTextureId); glCheck();
@@ -50,6 +52,7 @@ public abstract class BaseTextureInput {
     }
 
     public void onDestroy() {
+        GLHelper.signalOnDestroyed(this);
         synchronized (mLock) {
             try {
                 if (mTextureId != -1) {
@@ -60,6 +63,7 @@ public abstract class BaseTextureInput {
                 throw e;
             } finally {
                 mTextureId = -1;
+                mLock.notifyAll();
             }
         }
     }

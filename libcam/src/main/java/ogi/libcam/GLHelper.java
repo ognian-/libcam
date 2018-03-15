@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.HashSet;
 
 public final class GLHelper {
 
@@ -202,6 +203,36 @@ public final class GLHelper {
             if (value == i) return;
         }
         throw new IllegalArgumentException("Value not allowed");
+    }
+
+    private static HashSet<Object> sCreated = new HashSet<>();
+
+    public static void signalOnCreated(Object object) {
+        synchronized (sCreated) {
+            if (!sCreated.add(object)) {
+                throw new RuntimeException("Already created");
+            }
+        }
+    }
+
+    public static void signalOnDestroyed(Object object) {
+        synchronized (sCreated) {
+            if (!sCreated.remove(object)) {
+                throw new RuntimeException("Not created");
+            }
+        }
+    }
+
+    public static void assertClean() {
+        synchronized (sCreated) {
+            if (!sCreated.isEmpty()) {
+                String msg = "Not cleaned up: ";
+                for (Object obj : sCreated) {
+                    msg += String.valueOf(obj) + ", ";
+                }
+                throw new RuntimeException(msg);
+            }
+        }
     }
 
 }

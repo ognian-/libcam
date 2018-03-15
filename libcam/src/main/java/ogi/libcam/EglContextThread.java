@@ -19,7 +19,7 @@ public class EglContextThread {
 
     public interface Renderer {
         void onCreate();
-        boolean onDraw(BaseTextureInput ... inputs);
+        void onDraw(BaseTextureInput ... inputs);
         void onDestroy();
     }
 
@@ -53,6 +53,7 @@ public class EglContextThread {
             @Override
             public void run() {
                 try {
+                    GLHelper.signalOnCreated(Thread.currentThread());
                     try {
                         init(window, pbufferSize);
                         created.setResult(null);
@@ -67,6 +68,7 @@ public class EglContextThread {
                     e.printStackTrace();
                     throw e;
                 } finally {
+                    GLHelper.signalOnDestroyed(Thread.currentThread());
                     try {
                         mRenderer.onDestroy();
                     } catch (Throwable e) {
@@ -83,9 +85,7 @@ public class EglContextThread {
 
     private void loop() {
         while (!mStopThread.get()) {
-            if (!mRenderer.onDraw()) {
-                return;
-            }
+            mRenderer.onDraw();
             EGL14.eglSwapBuffers(mEglDisplay, mEglSurface); eglCheck();
         }
     }
