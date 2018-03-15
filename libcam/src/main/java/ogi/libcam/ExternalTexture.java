@@ -37,7 +37,7 @@ public class ExternalTexture {
 
     public void onDraw(int uniformTexture, int uniformMatrix, int textureSlot) {
         synchronized (mLock) {
-            /*
+            /*TODO
             try {
                 while (!mFrameAvailable) mLock.wait();
             } catch (InterruptedException e) {
@@ -58,6 +58,9 @@ public class ExternalTexture {
                 if (mTextureId != -1) {
                     GLES20.glDeleteTextures(1, new int[]{mTextureId}, 0); glCheck();
                 }
+            } catch (Throwable e) {
+                e.printStackTrace();
+                throw e;
             } finally {
                 mTextureId = -1;
             }

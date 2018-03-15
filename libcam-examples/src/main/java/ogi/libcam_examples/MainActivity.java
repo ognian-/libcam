@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -21,13 +20,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import ogi.libcam.BaseRenderer;
 import ogi.libcam.CaptureService;
 import ogi.libcam.DestroyableGLSurfaceView;
-import ogi.libcam.ExternalTexture;
+import ogi.libcam.GLHelper;
+import ogi.libcam.Pass;
 import ogi.libcam.PermissionsFragment;
-
-import static ogi.libcam.GLHelper.glCheck;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,27 +41,27 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl1), Color.RED);
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl2), Color.GREEN);
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl3), Color.BLUE);
-        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl4), Color.CYAN);
-
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl1));
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl2));
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl3));
+        setupGLSurfaceView((GLSurfaceView)findViewById(R.id.gl4));
 
         PermissionsFragment.attach(MainActivity.this, mPermissionsListener, "cam_perm");
 
     }
 
-    private void setupGLSurfaceView(final GLSurfaceView view, final int color) {
+    private void setupGLSurfaceView(final GLSurfaceView view) {
         final AtomicBoolean active = new AtomicBoolean();
         view.setTag(active);
         view.setEGLContextClientVersion(2);
         view.setRenderer(new DestroyableGLSurfaceView.DestroyableRenderer() {
 
-            final BaseRenderer renderer;
+            final Pass blit;
 
             {
                 try {
-                    renderer = new BaseRenderer(getAssets());
+                    blit = new Pass(GLHelper.loadShaderSource(getAssets(), "shaders/blit.vert"),
+                            GLHelper.loadShaderSource(getAssets(), "shaders/blit.frag"));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -72,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-                renderer.onCreate();
+                blit.onCreate();
             }
 
             @Override
@@ -82,18 +79,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDrawFrame(GL10 gl10) {
                 if (active.get()) {
-                    GLES20.glClearColor(Color.red(color) / 255.0f, Color.green(color) / 255.0f, Color.blue(color) / 255.0f, 1); glCheck();
-                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT); glCheck();
-                    renderer.onDraw();
-                } else {
-                    GLES20.glClearColor(0, 0, 0, 1); glCheck();
-                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT); glCheck();
+                    blit.onDraw(mCapture.getTexture(true), GLES20.GL_TEXTURE0);
                 }
             }
 
             @Override
             public void onDestroy() {
-                renderer.onDestroy();
+                blit.onDestroy();
             }
         });
         view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
@@ -102,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (mCurrent == view) return;
+
                 final Runnable activate = new Runnable() {
                     @Override
                     public void run() {
@@ -109,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
                         active.set(true);
                     }
                 };
+
                 if (mCurrent != null) {
                     final AtomicBoolean activeCurrent = (AtomicBoolean) mCurrent.getTag();
                     mCurrent.queueEvent(new Runnable() {
@@ -122,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     view.queueEvent(activate);
                 }
+
                 mCurrent = view;
             }
         });

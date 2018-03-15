@@ -63,9 +63,15 @@ public class EglContextThread {
                     mRenderer.onCreate();
 
                     loop();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    throw e;
                 } finally {
                     try {
                         mRenderer.onDestroy();
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        throw e;
                     } finally {
                         destroy();
                     }
@@ -153,12 +159,18 @@ public class EglContextThread {
                 EGL14.eglDestroySurface(mEglDisplay, mEglSurface); eglCheck();
                 mEglSurface = EGL14.EGL_NO_SURFACE;
             }
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw e;
         } finally {
             try {
                 if (mEglContext != EGL14.EGL_NO_CONTEXT) {
                     EGL14.eglDestroyContext(mEglDisplay, mEglContext); eglCheck();
                     mEglContext = EGL14.EGL_NO_CONTEXT;
                 }
+            } catch (Throwable e) {
+                e.printStackTrace();
+                throw e;
             } finally {
                 try {
                     if (mEglDisplay != EGL14.EGL_NO_DISPLAY) {
@@ -166,6 +178,9 @@ public class EglContextThread {
                         EGL14.eglTerminate(mEglDisplay); eglCheck();
                         mEglDisplay = EGL14.EGL_NO_DISPLAY;
                     }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    throw e;
                 } finally {
                     mStopResult.setResult(null);
                 }

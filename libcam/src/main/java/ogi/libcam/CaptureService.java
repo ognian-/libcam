@@ -255,12 +255,17 @@ public class CaptureService extends Service {
             }
         }
 
+        public ExternalTexture getTexture(boolean update) {
+            return mRenderer.getTexture(update);
+        }
+
         public void attachAnotherContext() {
             mRenderer.detach();
             mRenderer.attachAnother();
         }
 
         public void attachOriginalContext() {
+            mRenderer.detachAnother();
             mRenderer.attach();
         }
 

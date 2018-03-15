@@ -27,8 +27,16 @@ public class BaseRenderer implements EglContextThread.Renderer {
         return mSurfaceTexture.getSurface();
     }
 
+    public ExternalTexture getTexture(boolean update) {
+        return mSurfaceTexture.getTexture(update);
+    }
+
     public void attachAnother() {
         mSurfaceTexture.attach();
+    }
+
+    public void detachAnother() {
+        mSurfaceTexture.detach();
     }
 
     public void attach() {
