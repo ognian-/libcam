@@ -10,6 +10,7 @@ public class SurfaceTextureWrapper {
     private SurfaceTexture mSurfaceTexture;
     private Surface mSurface;
     private final ExternalTexture mTexture = new ExternalTexture();
+    private int mTextureId = -1;
     private final Object mLock = new Object();
     private final float[] mTexCoordsMatrix = new float[16];
 
@@ -17,8 +18,8 @@ public class SurfaceTextureWrapper {
         synchronized (mLock) {
             if (mSurfaceTexture != null) throw new IllegalStateException("Already created");
             mThreadId = Thread.currentThread().getId();
-            mTexture.onCreate();
-            mSurfaceTexture = new SurfaceTexture(mTexture.getId());
+            mTextureId = mTexture.onCreate();
+            mSurfaceTexture = new SurfaceTexture(mTextureId);
             mSurface = new Surface(mSurfaceTexture);
             mSurfaceTexture.setOnFrameAvailableListener(mListener);
             Matrix.setIdentityM(mTexCoordsMatrix, 0);
@@ -30,8 +31,8 @@ public class SurfaceTextureWrapper {
         synchronized (mLock) {
             if (mThreadId != -1) throw new IllegalStateException("Must detach first");
             mThreadId = Thread.currentThread().getId();
-            mTexture.onCreate();
-            mSurfaceTexture.attachToGLContext(mTexture.getId());
+            mTextureId = mTexture.onCreate();
+            mSurfaceTexture.attachToGLContext(mTextureId);
         }
     }
 
@@ -39,6 +40,7 @@ public class SurfaceTextureWrapper {
         synchronized (mLock) {
             if (mThreadId != Thread.currentThread().getId()) throw new IllegalStateException("Called on wrong thread");
             mThreadId = -1;
+            mTextureId = -1;
             mSurfaceTexture.detachFromGLContext();
             mTexture.onDestroy();
         }
@@ -54,6 +56,7 @@ public class SurfaceTextureWrapper {
             }
             mSurface = null;
             mTexture.onDestroy();
+            mTextureId = -1;
         }
     }
 
@@ -69,10 +72,13 @@ public class SurfaceTextureWrapper {
     }
 
     public ExternalTexture getTexture(boolean update) {
-        if (update) {
-            mSurfaceTexture.updateTexImage();
+        synchronized (mLock) {
+            if (mThreadId != Thread.currentThread().getId()) return null;
+            if (update) {
+                mSurfaceTexture.updateTexImage();
+            }
+            return mTexture;
         }
-        return  mTexture;
     }
 
     private final SurfaceTexture.OnFrameAvailableListener mListener = new SurfaceTexture.OnFrameAvailableListener() {

@@ -15,13 +15,13 @@ import android.view.View;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import ogi.libcam.CaptureService;
 import ogi.libcam.DestroyableGLSurfaceView;
+import ogi.libcam.ExternalTexture;
 import ogi.libcam.GLHelper;
 import ogi.libcam.Pass;
 import ogi.libcam.PermissionsFragment;
@@ -51,8 +51,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupGLSurfaceView(final GLSurfaceView view) {
-        final AtomicBoolean active = new AtomicBoolean();
-        view.setTag(active);
         view.setEGLContextClientVersion(2);
         view.setRenderer(new DestroyableGLSurfaceView.DestroyableRenderer() {
 
@@ -78,8 +76,16 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onDrawFrame(GL10 gl10) {
-                if (active.get()) {
-                    blit.onDraw(mCapture.getTexture(true), GLES20.GL_TEXTURE0);
+                synchronized (mCaptureLock) {
+                    try {
+                        while (mCapture == null) mCaptureLock.wait();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    ExternalTexture texture = mCapture.getTexture(true);
+                    if (texture != null) {
+                        blit.onDraw(texture, GLES20.GL_TEXTURE0);
+                    }
                 }
             }
 
@@ -99,16 +105,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         mCapture.attachAnotherContext();
-                        active.set(true);
                     }
                 };
 
                 if (mCurrent != null) {
-                    final AtomicBoolean activeCurrent = (AtomicBoolean) mCurrent.getTag();
                     mCurrent.queueEvent(new Runnable() {
                         @Override
                         public void run() {
-                            activeCurrent.set(false);
                             mCapture.attachOriginalContext();
                             view.queueEvent(activate);
                         }
