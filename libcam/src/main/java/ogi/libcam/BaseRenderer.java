@@ -1,7 +1,6 @@
 package ogi.libcam;
 
 import android.content.res.AssetManager;
-import android.opengl.GLES20;
 import android.view.Surface;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ public class BaseRenderer implements EglContextThread.Renderer {
         return mSurfaceTexture.getSurface();
     }
 
-    public ExternalTexture getTexture(boolean update) {
+    public BaseTextureInput getTexture(boolean update) {
         return mSurfaceTexture.getTexture(update);
     }
 
@@ -88,7 +87,7 @@ public class BaseRenderer implements EglContextThread.Renderer {
                 mAttached = false;
             }
             if (mAttached) {
-                mBlit.onDraw(mSurfaceTexture.getTexture(true), GLES20.GL_TEXTURE0);
+                mBlit.onDraw(mSurfaceTexture.getTexture(true));
             }
         }
         return true;

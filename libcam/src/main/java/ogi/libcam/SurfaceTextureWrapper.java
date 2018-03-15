@@ -9,7 +9,7 @@ public class SurfaceTextureWrapper {
     private long mThreadId = -1;
     private SurfaceTexture mSurfaceTexture;
     private Surface mSurface;
-    private final ExternalTexture mTexture = new ExternalTexture();
+    private final BaseTextureInput mTexture = new TextureExternalInput();
     private int mTextureId = -1;
     private final Object mLock = new Object();
     private final float[] mTexCoordsMatrix = new float[16];
@@ -71,7 +71,7 @@ public class SurfaceTextureWrapper {
         }
     }
 
-    public ExternalTexture getTexture(boolean update) {
+    public BaseTextureInput getTexture(boolean update) {
         synchronized (mLock) {
             if (mThreadId != Thread.currentThread().getId()) return null;
             if (update) {

@@ -255,7 +255,7 @@ public class CaptureService extends Service {
             }
         }
 
-        public ExternalTexture getTexture(boolean update) {
+        public BaseTextureInput getTexture(boolean update) {
             return mRenderer.getTexture(update);
         }
 

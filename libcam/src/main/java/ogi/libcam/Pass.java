@@ -17,8 +17,9 @@ public class Pass {
     private int mProgram = -1;
 
     private int mUniformPositionMatrix = -1;
-    private int mUniformTexCoordsMatrix = -1;
+
     private int mUniformTexture = -1;
+    private int mUniformTexCoordsMatrix = -1;
 
     private int mAttributePosition = -1;
     private int mAttributeTextCoords = -1;
@@ -34,8 +35,10 @@ public class Pass {
         mProgram = GLHelper.buildProgram(mVertexSource, mFragmentSource);
 
         mUniformPositionMatrix = GLES20.glGetUniformLocation(mProgram, "uPositionMatrix"); glCheck();
-        mUniformTexCoordsMatrix = GLES20.glGetUniformLocation(mProgram, "uTexCoordsMatrix"); glCheck();
+
         mUniformTexture = GLES20.glGetUniformLocation(mProgram, "uTexture"); glCheck();
+        mUniformTexCoordsMatrix = GLES20.glGetUniformLocation(mProgram, "uTexCoordsMatrix"); glCheck();
+
 
         mAttributePosition = GLES20.glGetAttribLocation(mProgram, "aPosition"); glCheck();
         mAttributeTextCoords = GLES20.glGetAttribLocation(mProgram, "aTexCoords"); glCheck();
@@ -43,12 +46,12 @@ public class Pass {
         Matrix.setIdentityM(mPositionMatrix, 0);
     }
 
-    public void onDraw(ExternalTexture texture, int textureSlot) {
+    public void onDraw(BaseTextureInput ... inputs) {
         GLES20.glUseProgram(mProgram); glCheck();
 
         GLES20.glUniformMatrix4fv(mUniformPositionMatrix, 1, false, mPositionMatrix, 0); glCheck();
 
-        texture.onDraw(mUniformTexture, mUniformTexCoordsMatrix, textureSlot);
+        inputs[0].onDraw(mUniformTexture, mUniformTexCoordsMatrix, GLES20.GL_TEXTURE0);
 
         GLES20.glEnableVertexAttribArray(mAttributePosition); glCheck();
         GLES20.glVertexAttribPointer(mAttributePosition, 2, GLES20.GL_FLOAT, false, 4 * 2, sPositionBuffer); glCheck();

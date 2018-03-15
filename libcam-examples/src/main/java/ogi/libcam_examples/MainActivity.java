@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -19,9 +18,9 @@ import java.util.List;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import ogi.libcam.BaseTextureInput;
 import ogi.libcam.CaptureService;
 import ogi.libcam.DestroyableGLSurfaceView;
-import ogi.libcam.ExternalTexture;
 import ogi.libcam.GLHelper;
 import ogi.libcam.Pass;
 import ogi.libcam.PermissionsFragment;
@@ -76,15 +75,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onDrawFrame(GL10 gl10) {
-                synchronized (mCaptureLock) {
-                    try {
-                        while (mCapture == null) mCaptureLock.wait();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    ExternalTexture texture = mCapture.getTexture(true);
+                if (mCapture != null) {
+                    BaseTextureInput texture = mCapture.getTexture(true);
                     if (texture != null) {
-                        blit.onDraw(texture, GLES20.GL_TEXTURE0);
+                        blit.onDraw(texture);
                     }
                 }
             }

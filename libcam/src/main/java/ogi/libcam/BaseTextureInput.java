@@ -1,17 +1,19 @@
 package ogi.libcam;
 
-import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
 import static ogi.libcam.GLHelper.glCheck;
 
-public class ExternalTexture {
+public abstract class BaseTextureInput {
 
     private int mTextureId = -1;
     private final Object mLock = new Object();
     private final float[] mTexCoordsMatrix = new float[16];
     private boolean mFrameAvailable;
+
+    protected abstract int genTextureId();
+    protected abstract int getTarget();
 
     public void onFrameAvailable(float[] texCoordMatrix) {
         synchronized (mLock) {
@@ -24,7 +26,7 @@ public class ExternalTexture {
     public int onCreate() {
         synchronized (mLock) {
             if (mTextureId != -1) throw new IllegalStateException("Must destroy first");
-            mTextureId = GLHelper.genTextureExternal();
+            mTextureId = genTextureId();
             Matrix.setIdentityM(mTexCoordsMatrix, 0);
             return mTextureId;
         }
@@ -42,7 +44,7 @@ public class ExternalTexture {
 
             GLES20.glUniformMatrix4fv(uniformMatrix, 1, false, mTexCoordsMatrix, 0); glCheck();
             GLES20.glActiveTexture(textureSlot); glCheck();
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureId); glCheck();
+            GLES20.glBindTexture(getTarget(), mTextureId); glCheck();
             GLES20.glUniform1i(uniformTexture, GLHelper.getTextureSlot(textureSlot)); glCheck();
         }
     }
