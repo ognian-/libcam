@@ -1,25 +1,22 @@
 package ogi.libcam;
 
-import android.content.res.AssetManager;
 import android.view.Surface;
 
-import java.io.IOException;
-
-public class BaseRenderer implements EglContextThread.Renderer {
+public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer {
 
     private static final String TAG = "LibCam";
 
     private final SurfaceTextureWrapper mSurfaceTexture;
-    private final Pass mBlit;
+    private final EglContextThread.Renderer mRenderer;
 
     private final Object mLock = new Object();
     private boolean mAttached = false;
     private WaitResult mAttach = null;
     private WaitResult mDetach = null;
 
-    public BaseRenderer(AssetManager am) throws IOException {
+    public SurfaceTextureRendererWrapper(EglContextThread.Renderer renderer) {
         mSurfaceTexture = new SurfaceTextureWrapper();
-        mBlit = new Pass(GLHelper.loadShaderSource(am, "shaders/blit.vert"), GLHelper.loadShaderSource(am, "shaders/blit.frag"));
+        mRenderer = renderer;
     }
 
     public Surface getSurface() {
@@ -39,7 +36,7 @@ public class BaseRenderer implements EglContextThread.Renderer {
     }
 
     public void attach() {
-        WaitResult attach = null;
+        WaitResult attach;
         synchronized (mLock) {
             if (mAttach != null) {
                 attach = mAttach;
@@ -51,7 +48,7 @@ public class BaseRenderer implements EglContextThread.Renderer {
     }
 
     public void detach() {
-        WaitResult detach = null;
+        WaitResult detach;
         synchronized (mLock) {
             if (mDetach != null) {
                 detach = mDetach;
@@ -68,11 +65,11 @@ public class BaseRenderer implements EglContextThread.Renderer {
             mSurfaceTexture.onCreate();
             mAttached = true;
         }
-        mBlit.onCreate();
+        mRenderer.onCreate();
     }
 
     @Override
-    public boolean onDraw() {
+    public boolean onDraw(BaseTextureInput ... inputs) {
         synchronized (mLock) {
             if (mAttach != null) {
                 mSurfaceTexture.attach();
@@ -87,7 +84,7 @@ public class BaseRenderer implements EglContextThread.Renderer {
                 mAttached = false;
             }
             if (mAttached) {
-                mBlit.onDraw(mSurfaceTexture.getTexture(true));
+                mRenderer.onDraw(mSurfaceTexture.getTexture(true));
             }
         }
         return true;
@@ -95,7 +92,7 @@ public class BaseRenderer implements EglContextThread.Renderer {
 
     @Override
     public void onDestroy() {
-        mBlit.onDestroy();
+        mRenderer.onDestroy();
         synchronized (mLock) {
             mSurfaceTexture.onDestroy();
             mAttached = false;

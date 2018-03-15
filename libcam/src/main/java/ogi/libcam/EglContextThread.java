@@ -19,7 +19,7 @@ public class EglContextThread {
 
     public interface Renderer {
         void onCreate();
-        boolean onDraw();
+        boolean onDraw(BaseTextureInput ... inputs);
         void onDestroy();
     }
 

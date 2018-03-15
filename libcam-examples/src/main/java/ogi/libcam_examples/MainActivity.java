@@ -15,15 +15,12 @@ import android.view.View;
 import java.io.IOException;
 import java.util.List;
 
-import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import ogi.libcam.BaseTextureInput;
 import ogi.libcam.CaptureService;
-import ogi.libcam.DestroyableGLSurfaceView;
-import ogi.libcam.GLHelper;
-import ogi.libcam.Pass;
 import ogi.libcam.PermissionsFragment;
+import ogi.libcam.PreviewRenderer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,43 +48,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupGLSurfaceView(final GLSurfaceView view) {
         view.setEGLContextClientVersion(2);
-        view.setRenderer(new DestroyableGLSurfaceView.DestroyableRenderer() {
 
-            final Pass blit;
-
-            {
-                try {
-                    blit = new Pass(GLHelper.loadShaderSource(getAssets(), "shaders/blit.vert"),
-                            GLHelper.loadShaderSource(getAssets(), "shaders/blit.frag"));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            @Override
-            public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-                blit.onCreate();
-            }
-
-            @Override
-            public void onSurfaceChanged(GL10 gl10, int i, int i1) {
-            }
-
-            @Override
-            public void onDrawFrame(GL10 gl10) {
-                if (mCapture != null) {
-                    BaseTextureInput texture = mCapture.getTexture(true);
-                    if (texture != null) {
-                        blit.onDraw(texture);
+        try {
+            view.setRenderer(new PreviewRenderer(getAssets()) {
+                @Override
+                public void onDrawFrame(GL10 gl) {
+                    if (mCapture != null) {
+                        BaseTextureInput texture = mCapture.getTexture(true);
+                        if (texture != null) {
+                            onDraw(texture);
+                        }
                     }
                 }
-            }
-
-            @Override
-            public void onDestroy() {
-                blit.onDestroy();
-            }
-        });
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
         view.setOnClickListener(new View.OnClickListener() {

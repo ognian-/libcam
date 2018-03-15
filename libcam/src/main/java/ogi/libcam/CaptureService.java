@@ -27,7 +27,7 @@ public class CaptureService extends Service {
     private static final String TAG = "LibCam";
 
     private final CaptureServiceBinder mBinder;
-    private BaseRenderer mRenderer;
+    private SurfaceTextureRendererWrapper mRenderer;
     private EglContextThread mEglContextThread;
 
     private CameraManager mManager;
@@ -188,7 +188,7 @@ public class CaptureService extends Service {
     public void onCreate() {
         super.onCreate();
         try {
-            mRenderer = new BaseRenderer(getAssets());
+            mRenderer = new SurfaceTextureRendererWrapper(new PreviewRenderer(getAssets()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
