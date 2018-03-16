@@ -15,7 +15,6 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Binder;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
@@ -191,7 +190,6 @@ public class CaptureService extends Service {
 
     @Override
     public void onCreate() {
-        GLHelper.signalOnCreated(this);
         super.onCreate();
         try {
             mRenderer = new SurfaceTextureRendererWrapper(new PreviewRenderer(getAssets()));
@@ -204,7 +202,6 @@ public class CaptureService extends Service {
 
     @Override
     public void onDestroy() {
-        GLHelper.signalOnDestroyed(this);
         if (mManager != null) {
             mManager.unregisterAvailabilityCallback(mAvailabilityCallback);
         }

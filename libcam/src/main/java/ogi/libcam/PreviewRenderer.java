@@ -17,7 +17,6 @@ public class PreviewRenderer implements EglContextThread.Renderer, DestroyableGL
 
     @Override
     public void onCreate() {
-        GLHelper.signalOnCreated(this);
         mBlit.onCreate();
     }
 
@@ -28,7 +27,6 @@ public class PreviewRenderer implements EglContextThread.Renderer, DestroyableGL
 
     @Override
     public void onDestroy() {
-        GLHelper.signalOnDestroyed(this);
         mBlit.onDestroy();
     }
 

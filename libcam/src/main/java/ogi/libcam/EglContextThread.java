@@ -53,7 +53,6 @@ public class EglContextThread {
             @Override
             public void run() {
                 try {
-                    GLHelper.signalOnCreated(Thread.currentThread());
                     try {
                         init(window, pbufferSize);
                         created.setResult(null);
@@ -68,7 +67,6 @@ public class EglContextThread {
                     e.printStackTrace();
                     throw e;
                 } finally {
-                    GLHelper.signalOnDestroyed(Thread.currentThread());
                     try {
                         mRenderer.onDestroy();
                     } catch (Throwable e) {

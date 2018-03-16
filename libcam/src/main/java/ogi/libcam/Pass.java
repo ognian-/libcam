@@ -32,7 +32,6 @@ public class Pass {
     }
 
     public void onCreate() {
-        GLHelper.signalOnCreated(this);
         mProgram = GLHelper.buildProgram(mVertexSource, mFragmentSource);
 
         mUniformPositionMatrix = GLES20.glGetUniformLocation(mProgram, "uPositionMatrix"); glCheck();
@@ -64,7 +63,6 @@ public class Pass {
     }
 
     public void onDestroy() {
-        GLHelper.signalOnDestroyed(this);
         if (mProgram != -1) {
             GLES20.glDeleteProgram(mProgram);
             mProgram = -1;

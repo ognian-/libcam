@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 
 import java.io.IOException;
@@ -20,7 +19,6 @@ import javax.microedition.khronos.opengles.GL10;
 
 import ogi.libcam.BaseTextureInput;
 import ogi.libcam.CaptureService;
-import ogi.libcam.GLHelper;
 import ogi.libcam.PermissionsFragment;
 import ogi.libcam.PreviewRenderer;
 
@@ -41,8 +39,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        GLHelper.assertClean();
 
         setContentView(R.layout.activity_main);
 
@@ -134,7 +130,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-        unbindService(mCaptureConnection);
+        synchronized (mCaptureLock) {
+            if (mCapture != null) {
+                unbindService(mCaptureConnection);
+            }
+        }
         super.onStop();
     }
 

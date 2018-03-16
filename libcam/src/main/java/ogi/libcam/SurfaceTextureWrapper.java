@@ -15,7 +15,6 @@ public class SurfaceTextureWrapper {
     private final float[] mTexCoordsMatrix = new float[16];
 
     public void onCreate() {
-        GLHelper.signalOnCreated(this);
         synchronized (mLock) {
             if (mSurfaceTexture != null) throw new IllegalStateException("Already created");
             mThreadId = Thread.currentThread().getId();
@@ -48,7 +47,6 @@ public class SurfaceTextureWrapper {
     }
 
     public void onDestroy() {
-        GLHelper.signalOnDestroyed(this);
         synchronized (mLock) {
             if (mThreadId != -1 && mThreadId != Thread.currentThread().getId()) throw new IllegalStateException("Called on wrong thread");
             mThreadId = -1;
@@ -65,7 +63,6 @@ public class SurfaceTextureWrapper {
     }
 
     public void onDestroyForced() {
-        GLHelper.signalOnDestroyed(this);
         synchronized (mLock) {
             mThreadId = -1;
             if (mSurfaceTexture != null) {
@@ -104,9 +101,10 @@ public class SurfaceTextureWrapper {
     private final SurfaceTexture.OnFrameAvailableListener mListener = new SurfaceTexture.OnFrameAvailableListener() {
         @Override
         public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+            //TODO sync input
             synchronized (mLock) {
                 surfaceTexture.getTransformMatrix(mTexCoordsMatrix);
-                mTexture.onFrameAvailable(mTexCoordsMatrix);
+                mTexture.setTexCoordsMatrix(mTexCoordsMatrix);
             }
         }
     };
