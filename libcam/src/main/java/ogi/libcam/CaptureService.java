@@ -219,6 +219,7 @@ public class CaptureService extends Service {
 
     private void makeSurface(Size size) {
         destroySurface();
+        mRenderer.setDefaultBufferSize(size);
         mEglContextThread = new EglContextThread(mRenderer, size);
     }
 

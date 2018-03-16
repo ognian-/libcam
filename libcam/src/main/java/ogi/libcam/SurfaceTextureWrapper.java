@@ -2,6 +2,7 @@ package ogi.libcam;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.Matrix;
+import android.util.Size;
 import android.view.Surface;
 
 public class SurfaceTextureWrapper {
@@ -14,12 +15,13 @@ public class SurfaceTextureWrapper {
     private final Object mLock = new Object();
     private final float[] mTexCoordsMatrix = new float[16];
 
-    public void onCreate() {
+    public void onCreate(Size size) {
         synchronized (mLock) {
             if (mSurfaceTexture != null) throw new IllegalStateException("Already created");
             mThreadId = Thread.currentThread().getId();
             mTextureId = mTexture.onCreate();
             mSurfaceTexture = new SurfaceTexture(mTextureId);
+            mSurfaceTexture.setDefaultBufferSize(size.getWidth(), size.getHeight());
             mSurface = new Surface(mSurfaceTexture);
             mSurfaceTexture.setOnFrameAvailableListener(mListener);
             Matrix.setIdentityM(mTexCoordsMatrix, 0);

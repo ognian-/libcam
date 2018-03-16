@@ -1,5 +1,6 @@
 package ogi.libcam;
 
+import android.util.Size;
 import android.view.Surface;
 
 public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer {
@@ -13,10 +14,17 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
     private boolean mAttached = false;
     private WaitResult mAttach = null;
     private WaitResult mDetach = null;
+    private Size mDefaultBufferSize = new Size(-1, -1);
 
     public SurfaceTextureRendererWrapper(EglContextThread.Renderer renderer) {
         mSurfaceTexture = new SurfaceTextureWrapper();
         mRenderer = renderer;
+    }
+
+    public void setDefaultBufferSize(Size size) {
+        synchronized (mLock) {
+            mDefaultBufferSize = size;
+        }
     }
 
     public Surface getSurface() {
@@ -62,7 +70,7 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
     @Override
     public void onCreate() {
         synchronized (mLock) {
-            mSurfaceTexture.onCreate();
+            mSurfaceTexture.onCreate(mDefaultBufferSize);
             mAttached = true;
         }
         mRenderer.onCreate();
@@ -99,6 +107,7 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
             } else {
                 mSurfaceTexture.onDestroyForced();
             }
+            mDefaultBufferSize = new Size(-1, -1);
         }
     }
 
