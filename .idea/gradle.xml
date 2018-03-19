@@ -10,6 +10,7 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/libcam" />
             <option value="$PROJECT_DIR$/libcam-examples" />
+            <option value="$PROJECT_DIR$/libgl" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

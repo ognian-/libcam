@@ -5,7 +5,10 @@ import android.opengl.Matrix;
 
 import java.nio.FloatBuffer;
 
-import static ogi.libcam.GLHelper.glCheck;
+import ogi.libgl.BaseTextureInput;
+import ogi.libgl.GLHelper;
+
+import static ogi.libgl.GLHelper.glCheck;
 
 public class Pass {
 
@@ -46,7 +49,7 @@ public class Pass {
         Matrix.setIdentityM(mPositionMatrix, 0);
     }
 
-    public void onDraw(BaseTextureInput ... inputs) {
+    public void onDraw(BaseTextureInput... inputs) {
         GLES20.glUseProgram(mProgram); glCheck();
 
         GLES20.glUniformMatrix4fv(mUniformPositionMatrix, 1, false, mPositionMatrix, 0); glCheck();

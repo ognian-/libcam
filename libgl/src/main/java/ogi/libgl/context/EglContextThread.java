@@ -1,4 +1,4 @@
-package ogi.libcam;
+package ogi.libgl.context;
 
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
@@ -10,35 +10,39 @@ import android.util.Size;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static ogi.libcam.GLHelper.assertTrue;
-import static ogi.libcam.GLHelper.eglCheck;
+import ogi.libgl.BaseTextureInput;
+import ogi.libgl.GLHelper;
+import ogi.libgl.WaitResult;
+
+import static ogi.libgl.GLHelper.assertTrue;
+import static ogi.libgl.GLHelper.eglCheck;
 
 public class EglContextThread {
 
-    private static final String TAG = "LibCam";
+    private static final String TAG = "LibGL";
 
-    public interface Renderer {
+    public interface Callback {
         void onCreate();
-        void onDraw(BaseTextureInput ... inputs);
+        void onDraw(BaseTextureInput... inputs);
         void onDestroy();
     }
 
     private final AtomicBoolean mStopThread = new AtomicBoolean();
     private final WaitResult mStopResult = new WaitResult();
-    private final Renderer mRenderer;
+    private final Callback mCallback;
 
     private EGLConfig mEglConfig = null;
     private EGLDisplay mEglDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext mEglContext = EGL14.EGL_NO_CONTEXT;
     private EGLSurface mEglSurface = EGL14.EGL_NO_SURFACE;
 
-    public EglContextThread(Renderer renderer, Object window) {
-        mRenderer = renderer;
+    public EglContextThread(Callback callback, Object window) {
+        mCallback = callback;
         startThread(window, null);
     }
 
-    public EglContextThread(Renderer renderer, Size size) {
-        mRenderer = renderer;
+    public EglContextThread(Callback callback, Size size) {
+        mCallback = callback;
         startThread(null, size);
     }
 
@@ -60,7 +64,7 @@ public class EglContextThread {
                         created.setException(e);
                         return;
                     }
-                    mRenderer.onCreate();
+                    mCallback.onCreate();
 
                     loop();
                 } catch (Throwable e) {
@@ -68,7 +72,7 @@ public class EglContextThread {
                     throw e;
                 } finally {
                     try {
-                        mRenderer.onDestroy();
+                        mCallback.onDestroy();
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw e;
@@ -77,13 +81,13 @@ public class EglContextThread {
                     }
                 }
             }
-        }, "OutputSurface").start();
+        }, "EglContextThread").start();
         created.getResult();
     }
 
     private void loop() {
         while (!mStopThread.get()) {
-            mRenderer.onDraw();
+            mCallback.onDraw();
             EGL14.eglSwapBuffers(mEglDisplay, mEglSurface); eglCheck();
         }
     }

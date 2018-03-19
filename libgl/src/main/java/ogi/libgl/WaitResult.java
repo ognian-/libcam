@@ -1,4 +1,4 @@
-package ogi.libcam;
+package ogi.libgl;
 
 public class WaitResult {
 
@@ -9,6 +9,7 @@ public class WaitResult {
 
     public void setResult(Object result) {
         synchronized (mLock) {
+            if (mDone) throw new IllegalStateException("Already finished");
             mDone = true;
             mResult = result;
             mException = null;
@@ -18,6 +19,7 @@ public class WaitResult {
 
     public void setException(Exception exception) {
         synchronized (mLock) {
+            if (mDone) throw new IllegalStateException("Already finished");
             mDone = true;
             mException = exception;
             mResult = null;

@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/LibCam.iml" filepath="$PROJECT_DIR$/LibCam.iml" />
       <module fileurl="file://$PROJECT_DIR$/libcam/libcam.iml" filepath="$PROJECT_DIR$/libcam/libcam.iml" />
       <module fileurl="file://$PROJECT_DIR$/libcam-examples/libcam-examples.iml" filepath="$PROJECT_DIR$/libcam-examples/libcam-examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/libgl/libgl.iml" filepath="$PROJECT_DIR$/libgl/libgl.iml" />
     </modules>
   </component>
 </project>

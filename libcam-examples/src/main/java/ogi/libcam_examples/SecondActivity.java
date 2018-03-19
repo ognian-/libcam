@@ -22,7 +22,7 @@ import ogi.libcam.CaptureService;
 import ogi.libcam.PermissionsFragment;
 import ogi.libcam.PreviewRenderer;
 
-public class MainActivity extends AppCompatActivity {
+public class SecondActivity extends AppCompatActivity {
 
     private static final String TAG = "LibCamExamples";
 
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         setupGLSurfaceView(mGL3);
         setupGLSurfaceView(mGL4);
 
-        PermissionsFragment.attach(MainActivity.this, mPermissionsListener, "cam_perm");
+        PermissionsFragment.attach(SecondActivity.this, mPermissionsListener, "cam_perm");
 
     }
 
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+                Intent intent = new Intent(SecondActivity.this, MainActivity.class);
                 startActivity(intent);
                 return true;
             }
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
     private void bindService() {
         if (mCapture != null) return;
         if (!mPermissions) return;
-        bindService(new Intent(MainActivity.this, CaptureService.class), mCaptureConnection, Context.BIND_AUTO_CREATE);
+        bindService(new Intent(SecondActivity.this, CaptureService.class), mCaptureConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
             synchronized (mCaptureLock) {
                 mPermissions = false;
             }
-            new AlertDialog.Builder(MainActivity.this)
+            new AlertDialog.Builder(SecondActivity.this)
                     .setMessage("This app can't run without camera permissions")
                     .setCancelable(false)
                     .setNegativeButton("Close", new DialogInterface.OnClickListener() {
@@ -227,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void showRationale(List<String> permissions, final Runnable done) {
-            new AlertDialog.Builder(MainActivity.this)
+            new AlertDialog.Builder(SecondActivity.this)
                     .setMessage("Please consider granting camera permissions to this app")
                     .setCancelable(false)
                     .setPositiveButton("OK", new DialogInterface.OnClickListener() {

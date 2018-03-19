@@ -1,11 +1,13 @@
-package ogi.libcam;
+package ogi.libgl.context;
 
 import android.opengl.EGL14;
 
 import java.util.HashMap;
 
-import static ogi.libcam.GLHelper.assertOneOf;
-import static ogi.libcam.GLHelper.assertRange;
+import ogi.libgl.GLHelper;
+
+import static ogi.libgl.GLHelper.assertOneOf;
+import static ogi.libgl.GLHelper.assertRange;
 
 public class EglAttribs {
 

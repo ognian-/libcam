@@ -7,7 +7,11 @@ import java.io.IOException;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class PreviewRenderer implements EglContextThread.Renderer, DestroyableGLSurfaceView.DestroyableRenderer {
+import ogi.libgl.BaseTextureInput;
+import ogi.libgl.GLHelper;
+import ogi.libgl.context.EglContextThread;
+
+public class PreviewRenderer implements EglContextThread.Callback, DestroyableGLSurfaceView.DestroyableRenderer {
 
     private final Pass mBlit;
 
@@ -21,7 +25,7 @@ public class PreviewRenderer implements EglContextThread.Renderer, DestroyableGL
     }
 
     @Override
-    public void onDraw(BaseTextureInput ... inputs) {
+    public void onDraw(BaseTextureInput... inputs) {
         mBlit.onDraw(inputs[0]);
     }
 

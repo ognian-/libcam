@@ -5,6 +5,8 @@ import android.opengl.Matrix;
 import android.util.Size;
 import android.view.Surface;
 
+import ogi.libgl.BaseTextureInput;
+
 public class SurfaceTextureWrapper {
 
     private long mThreadId = -1;

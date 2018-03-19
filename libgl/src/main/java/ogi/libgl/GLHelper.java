@@ -1,4 +1,4 @@
-package ogi.libcam;
+package ogi.libgl;
 
 import android.content.res.AssetManager;
 import android.opengl.EGL14;
@@ -15,9 +15,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import ogi.libgl.context.EglAttribs;
+
 public final class GLHelper {
 
-    private static final String TAG = "LibCam";
+    private static final String TAG = "LibGL";
 
     public static final int EGL_DONT_CARE = -1;
     public static final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;

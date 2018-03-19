@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import ogi.libgl.BaseTextureInput;
+import ogi.libgl.context.EglContextThread;
+
 public class CaptureService extends Service {
 
     private static final String TAG = "LibCam";
@@ -58,7 +61,9 @@ public class CaptureService extends Service {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
             try {
-                mCameraDevice = camera;
+                synchronized (mAvailableCameras) {
+                    mCameraDevice = camera;
+                }
                 final StreamConfigurationMap configs = mManager.getCameraCharacteristics(camera.getId())
                         .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
@@ -86,7 +91,9 @@ public class CaptureService extends Service {
 
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
-            mCameraDevice = null;
+            synchronized (mAvailableCameras) {
+                mCameraDevice = null;
+            }
             destroySurface();
             mListener.onCameraError(camera.getId());
         }
@@ -99,7 +106,9 @@ public class CaptureService extends Service {
 
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
-            mCameraDevice = null;
+            synchronized (mAvailableCameras) {
+                mCameraDevice = null;
+            }
             destroySurface();
         }
 
@@ -153,7 +162,7 @@ public class CaptureService extends Service {
 
         @Override
         public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
-            mListener.onCameraError(session.getDevice().getId());
+            //XXX mListener.onCameraError(session.getDevice().getId());
         }
 
         @Override
@@ -209,9 +218,11 @@ public class CaptureService extends Service {
             mSession.close();
             mSession = null;
         }
-        if (mCameraDevice != null) {
-            mCameraDevice.close();
-            mCameraDevice = null;
+        synchronized (mAvailableCameras) {
+            if (mCameraDevice != null) {
+                mCameraDevice.close();
+                mCameraDevice = null;
+            }
         }
         destroySurface();
         super.onDestroy();
@@ -242,6 +253,12 @@ public class CaptureService extends Service {
         public boolean openCamera(String cameraId, @NonNull Listener listener) {
             //TODO close previous
             mListener = listener;
+            synchronized (mAvailableCameras) {
+                if (mCameraDevice != null && cameraId.equals(mCameraDevice.getId())) {
+                    listener.onCameraCaptureSessionConfigured(cameraId);
+                    return true;
+                }
+            }
             try {
                 mManager.openCamera(cameraId, mCameraDeviceStateCallback, null);
                 return true;
@@ -254,6 +271,7 @@ public class CaptureService extends Service {
 
         public boolean startPreview() {
             try {
+                mSession.abortCaptures();
                 final CaptureRequest.Builder request = mSession.getDevice().createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
                 request.addTarget(mRenderer.getSurface());
                 request.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
@@ -292,7 +310,11 @@ public class CaptureService extends Service {
 
         private String getCameraId(int lensFacing) {
             synchronized (mAvailableCameras) {
-                for (final String cameraId : mAvailableCameras) {
+                final ArrayList<String> available = new ArrayList<>(mAvailableCameras);
+                if (mCameraDevice != null) {
+                    available.add(mCameraDevice.getId());
+                }
+                for (final String cameraId : available) {
                     try {
                         if (mManager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == lensFacing) {
                             return cameraId;

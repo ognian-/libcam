@@ -1,13 +1,13 @@
-package ogi.libcam;
+package ogi.libgl;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
-import static ogi.libcam.GLHelper.glCheck;
+import static ogi.libgl.GLHelper.glCheck;
 
 public abstract class BaseTextureInput {
 
-    private static final String TAG = "LibCam";
+    private static final String TAG = "LibGL";
 
     private int mTextureId = -1;
     private final Object mLock = new Object();

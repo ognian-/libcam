@@ -1,1 +1,1 @@
-include ':libcam', ':libcam-examples'
+include ':libcam', ':libcam-examples', ':libgl'

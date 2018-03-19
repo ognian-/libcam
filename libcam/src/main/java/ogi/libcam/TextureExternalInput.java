@@ -2,6 +2,9 @@ package ogi.libcam;
 
 import android.opengl.GLES11Ext;
 
+import ogi.libgl.BaseTextureInput;
+import ogi.libgl.GLHelper;
+
 public class TextureExternalInput extends BaseTextureInput {
 
     @Override

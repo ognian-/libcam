@@ -3,12 +3,16 @@ package ogi.libcam;
 import android.util.Size;
 import android.view.Surface;
 
-public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer {
+import ogi.libgl.BaseTextureInput;
+import ogi.libgl.WaitResult;
+import ogi.libgl.context.EglContextThread;
+
+public class SurfaceTextureRendererWrapper implements EglContextThread.Callback {
 
     private static final String TAG = "LibCam";
 
     private final SurfaceTextureWrapper mSurfaceTexture;
-    private final EglContextThread.Renderer mRenderer;
+    private final EglContextThread.Callback mCallback;
 
     private final Object mLock = new Object();
     private boolean mAttached = false;
@@ -16,9 +20,9 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
     private WaitResult mDetach = null;
     private Size mDefaultBufferSize = new Size(-1, -1);
 
-    public SurfaceTextureRendererWrapper(EglContextThread.Renderer renderer) {
+    public SurfaceTextureRendererWrapper(EglContextThread.Callback callback) {
         mSurfaceTexture = new SurfaceTextureWrapper();
-        mRenderer = renderer;
+        mCallback = callback;
     }
 
     public void setDefaultBufferSize(Size size) {
@@ -73,7 +77,7 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
             mSurfaceTexture.onCreate(mDefaultBufferSize);
             mAttached = true;
         }
-        mRenderer.onCreate();
+        mCallback.onCreate();
     }
 
     @Override
@@ -92,14 +96,14 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Renderer 
                 mAttached = false;
             }
             if (mAttached) {
-                mRenderer.onDraw(mSurfaceTexture.getTexture(true));
+                mCallback.onDraw(mSurfaceTexture.getTexture(true));
             }
         }
     }
 
     @Override
     public void onDestroy() {
-        mRenderer.onDestroy();
+        mCallback.onDestroy();
         synchronized (mLock) {
             if (mAttached) {
                 mSurfaceTexture.onDestroy();
