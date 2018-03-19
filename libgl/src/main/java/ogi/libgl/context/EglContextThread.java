@@ -11,11 +11,11 @@ import android.util.Size;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ogi.libgl.BaseTextureInput;
-import ogi.libgl.GLHelper;
-import ogi.libgl.WaitResult;
+import ogi.libgl.util.GLHelper;
+import ogi.libgl.util.WaitResult;
 
-import static ogi.libgl.GLHelper.assertTrue;
-import static ogi.libgl.GLHelper.eglCheck;
+import static ogi.libgl.util.GLHelper.assertTrue;
+import static ogi.libgl.util.GLHelper.eglCheck;
 
 public class EglContextThread {
 

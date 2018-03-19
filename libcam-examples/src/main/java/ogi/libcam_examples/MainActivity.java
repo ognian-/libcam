@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onDrawFrame(GL10 gl) {
                     if (mCapture != null) {
-                        BaseTextureInput texture = mCapture.getTexture(true);
+                        BaseTextureInput texture = mCapture.getTexture();
                         if (texture != null) {
                             onDraw(texture);
                         }

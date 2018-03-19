@@ -4,8 +4,8 @@ import android.util.Size;
 import android.view.Surface;
 
 import ogi.libgl.BaseTextureInput;
-import ogi.libgl.WaitResult;
 import ogi.libgl.context.EglContextThread;
+import ogi.libgl.util.WaitResult;
 
 public class SurfaceTextureRendererWrapper implements EglContextThread.Callback {
 
@@ -35,8 +35,8 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Callback 
         return mSurfaceTexture.getSurface();
     }
 
-    public BaseTextureInput getTexture(boolean update) {
-        return mSurfaceTexture.getTexture(update);
+    public BaseTextureInput getTexture() {
+        return mSurfaceTexture.getTexture();
     }
 
     public void attachAnother() {
@@ -96,7 +96,7 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Callback 
                 mAttached = false;
             }
             if (mAttached) {
-                mCallback.onDraw(mSurfaceTexture.getTexture(true));
+                mCallback.onDraw(mSurfaceTexture.getTexture());
             }
         }
     }

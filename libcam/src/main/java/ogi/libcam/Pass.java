@@ -6,9 +6,9 @@ import android.opengl.Matrix;
 import java.nio.FloatBuffer;
 
 import ogi.libgl.BaseTextureInput;
-import ogi.libgl.GLHelper;
+import ogi.libgl.util.GLHelper;
 
-import static ogi.libgl.GLHelper.glCheck;
+import static ogi.libgl.util.GLHelper.glCheck;
 
 public class Pass {
 
@@ -63,6 +63,8 @@ public class Pass {
         GLES20.glVertexAttribPointer(mAttributeTextCoords, 2, GLES20.GL_FLOAT, false, 4 * 2, sTexCoordsBuffer); glCheck();
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4); glCheck();
+
+        inputs[0].onDoneDraw();
     }
 
     public void onDestroy() {

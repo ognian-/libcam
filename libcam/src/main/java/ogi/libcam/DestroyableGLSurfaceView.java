@@ -11,7 +11,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
-import static ogi.libgl.GLHelper.eglCheck;
+import static ogi.libgl.util.GLHelper.eglCheck;
 
 public class DestroyableGLSurfaceView extends GLSurfaceView {
 

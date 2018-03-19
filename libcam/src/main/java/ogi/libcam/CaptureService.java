@@ -286,8 +286,8 @@ public class CaptureService extends Service {
             }
         }
 
-        public BaseTextureInput getTexture(boolean update) {
-            return mRenderer.getTexture(update);
+        public BaseTextureInput getTexture() {
+            return mRenderer.getTexture();
         }
 
         public void attachAnotherContext() {

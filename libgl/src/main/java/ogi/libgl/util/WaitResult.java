@@ -1,4 +1,4 @@
-package ogi.libgl;
+package ogi.libgl.util;
 
 public class WaitResult {
 

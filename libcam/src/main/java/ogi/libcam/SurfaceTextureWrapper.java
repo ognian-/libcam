@@ -1,7 +1,6 @@
 package ogi.libcam;
 
 import android.graphics.SurfaceTexture;
-import android.opengl.Matrix;
 import android.util.Size;
 import android.view.Surface;
 
@@ -12,21 +11,20 @@ public class SurfaceTextureWrapper {
     private long mThreadId = -1;
     private SurfaceTexture mSurfaceTexture;
     private Surface mSurface;
-    private final BaseTextureInput mTexture = new TextureExternalInput();
+    private BaseTextureInput mTexture;
     private int mTextureId = -1;
     private final Object mLock = new Object();
-    private final float[] mTexCoordsMatrix = new float[16];
 
     public void onCreate(Size size) {
         synchronized (mLock) {
             if (mSurfaceTexture != null) throw new IllegalStateException("Already created");
             mThreadId = Thread.currentThread().getId();
+            mSurfaceTexture = new SurfaceTexture(mTextureId, false);
+            mTexture = new TextureExternalInput(mSurfaceTexture, false);
             mTextureId = mTexture.onCreate();
-            mSurfaceTexture = new SurfaceTexture(mTextureId);
             mSurfaceTexture.setDefaultBufferSize(size.getWidth(), size.getHeight());
             mSurface = new Surface(mSurfaceTexture);
             mSurfaceTexture.setOnFrameAvailableListener(mListener);
-            Matrix.setIdentityM(mTexCoordsMatrix, 0);
             mLock.notifyAll();
         }
     }
@@ -58,6 +56,7 @@ public class SurfaceTextureWrapper {
                 mSurfaceTexture.release();
                 mSurfaceTexture = null;
             }
+            mTexture = null;
             mSurface = null;
             if (mTextureId != -1) {
                 mTexture.onDestroy();
@@ -78,6 +77,7 @@ public class SurfaceTextureWrapper {
                 mTexture.onDestroy();
                 mTextureId = -1;
             }
+            mTexture = null;
         }
     }
 
@@ -92,13 +92,15 @@ public class SurfaceTextureWrapper {
         }
     }
 
-    public BaseTextureInput getTexture(boolean update) {
-        synchronized (mLock) {
-            if (mThreadId != Thread.currentThread().getId()) return null;
-            if (update) {
-                mSurfaceTexture.updateTexImage();
+    public BaseTextureInput getTexture() {
+        if (mThreadId != Thread.currentThread().getId()) return null;
+        try {
+            synchronized (mLock) {
+                while (mTexture == null) mTexture.wait();
+                return mTexture;
             }
-            return mTexture;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -106,10 +108,6 @@ public class SurfaceTextureWrapper {
         @Override
         public void onFrameAvailable(SurfaceTexture surfaceTexture) {
             //TODO sync input
-            synchronized (mLock) {
-                surfaceTexture.getTransformMatrix(mTexCoordsMatrix);
-                mTexture.setTexCoordsMatrix(mTexCoordsMatrix);
-            }
         }
     };
 

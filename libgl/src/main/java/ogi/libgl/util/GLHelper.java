@@ -1,4 +1,4 @@
-package ogi.libgl;
+package ogi.libgl.util;
 
 import android.content.res.AssetManager;
 import android.opengl.EGL14;

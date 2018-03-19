@@ -4,10 +4,10 @@ import android.opengl.EGL14;
 
 import java.util.HashMap;
 
-import ogi.libgl.GLHelper;
+import ogi.libgl.util.GLHelper;
 
-import static ogi.libgl.GLHelper.assertOneOf;
-import static ogi.libgl.GLHelper.assertRange;
+import static ogi.libgl.util.GLHelper.assertOneOf;
+import static ogi.libgl.util.GLHelper.assertRange;
 
 public class EglAttribs {
 

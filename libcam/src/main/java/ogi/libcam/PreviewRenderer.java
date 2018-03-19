@@ -8,8 +8,8 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import ogi.libgl.BaseTextureInput;
-import ogi.libgl.GLHelper;
 import ogi.libgl.context.EglContextThread;
+import ogi.libgl.util.GLHelper;
 
 public class PreviewRenderer implements EglContextThread.Callback, DestroyableGLSurfaceView.DestroyableRenderer {
 
