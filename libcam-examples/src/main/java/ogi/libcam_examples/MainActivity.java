@@ -159,11 +159,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).attach();
         mGL1.onResume();
         mGL2.onResume();
         mGL3.onResume();
         mGL4.onResume();
+        if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).attach();
     }
 
     @Override
