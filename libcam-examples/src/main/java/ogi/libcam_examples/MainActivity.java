@@ -42,24 +42,34 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        mGL1 = (GLSurfaceView)findViewById(R.id.gl1);
-        mGL2 = (GLSurfaceView)findViewById(R.id.gl2);
-        mGL3 = (GLSurfaceView)findViewById(R.id.gl3);
-        mGL4 = (GLSurfaceView)findViewById(R.id.gl4);
+        mGL1 = findViewById(R.id.gl1);
+        mGL2 = findViewById(R.id.gl2);
+        mGL3 = findViewById(R.id.gl3);
+        mGL4 = findViewById(R.id.gl4);
 
-        setupGLSurfaceView(mGL1);
-        setupGLSurfaceView(mGL2);
-        setupGLSurfaceView(mGL3);
-        setupGLSurfaceView(mGL4);
+        setupGLSurfaceView(mGL1, 1);
+        setupGLSurfaceView(mGL2, 2);
+        setupGLSurfaceView(mGL3, 3);
+        setupGLSurfaceView(mGL4, 4);
 
         PermissionsFragment.attach(MainActivity.this, mPermissionsListener, "cam_perm");
 
     }
 
-    private void setupGLSurfaceView(final GLSurfaceView view) {
+    private void setupGLSurfaceView(final GLSurfaceView view, final int num) {
         view.setEGLContextClientVersion(2);
 
-        final AttachEvents attachEvents = new AttachEvents();
+        final AttachEvents attachEvents = new AttachEvents() {
+            @Override
+            public void attach() {
+                super.attach();
+            }
+
+            @Override
+            public void detach() {
+                super.detach();
+            }
+        };
         final AttachEvents.Callback callback = new AttachEvents.Callback() {
             @Override
             public void onAttach() {
@@ -135,10 +145,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+        boolean connected;
         synchronized (mCaptureLock) {
-            if (mCapture != null) {
-                unbindService(mCaptureConnection);
-            }
+            connected = mCapture != null;
+        }
+        if (connected) {
+            unbindService(mCaptureConnection);
+            mCaptureConnection.onServiceDisconnected(new ComponentName(this, CaptureService.class));
         }
         super.onStop();
     }
@@ -146,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).attach();
         mGL1.onResume();
         mGL2.onResume();
         mGL3.onResume();
@@ -154,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+        if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).detach();
         mGL1.onPause();
         mGL2.onPause();
         mGL3.onPause();

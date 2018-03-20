@@ -16,6 +16,13 @@ public class TextureExternalInput extends BaseTextureInput {
 
     private final WaitResult mSurfaceResult = new WaitResult();
 
+    private final SurfaceTexture.OnFrameAvailableListener mListener = new SurfaceTexture.OnFrameAvailableListener() {
+        @Override
+        public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+            //TODO sync
+        }
+    };
+
     public Surface getSurface() {
         return (Surface) mSurfaceResult.getResult();
     }
@@ -45,6 +52,7 @@ public class TextureExternalInput extends BaseTextureInput {
         if (mSurfaceTexture == null) {
             mSurfaceTexture = new SurfaceTexture(getTextureId());
             mSurface = new Surface(mSurfaceTexture);
+            mSurfaceTexture.setOnFrameAvailableListener(mListener);
             mSurfaceResult.setResult(mSurface);
         } else {
             mSurfaceTexture.attachToGLContext(getTextureId());
