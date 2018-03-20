@@ -1,6 +1,8 @@
 package ogi.libgl.util;
 
-public class WaitResult {
+import java.io.Closeable;
+
+public class WaitResult implements Closeable {
 
     private final Object mLock = new Object();
     private boolean mDone = false;
@@ -39,4 +41,12 @@ public class WaitResult {
         }
     }
 
+    @Override
+    public void close() {
+        synchronized (mLock) {
+            mDone = true;
+            mResult = null;
+            mException = null;
+        }
+    }
 }

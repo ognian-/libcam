@@ -5,23 +5,31 @@ import android.view.Surface;
 
 import ogi.libgl.BaseTextureInput;
 import ogi.libgl.context.EglContextThread;
-import ogi.libgl.util.WaitResult;
 
 public class SurfaceTextureRendererWrapper implements EglContextThread.Callback {
 
     private static final String TAG = "LibCam";
 
-    private final SurfaceTextureWrapper mSurfaceTexture;
+    private final TextureExternalInput mTexture;
     private final EglContextThread.Callback mCallback;
 
     private final Object mLock = new Object();
-    private boolean mAttached = false;
-    private WaitResult mAttach = null;
-    private WaitResult mDetach = null;
+    private final AttachEvents mAttachEvents = new AttachEvents();
+    private final AttachEvents.Callback mAttachEventsCallback = new AttachEvents.Callback() {
+        @Override
+        public void onAttach() {
+            mTexture.onCreate();
+        }
+
+        @Override
+        public void onDetach() {
+            mTexture.onDestroy();
+        }
+    };
     private Size mDefaultBufferSize = new Size(-1, -1);
 
     public SurfaceTextureRendererWrapper(EglContextThread.Callback callback) {
-        mSurfaceTexture = new SurfaceTextureWrapper();
+        mTexture = new TextureExternalInput();
         mCallback = callback;
     }
 
@@ -32,72 +40,44 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Callback 
     }
 
     public Surface getSurface() {
-        return mSurfaceTexture.getSurface();
+        return mTexture.getSurface();
     }
 
     public BaseTextureInput getTexture() {
-        return mSurfaceTexture.getTexture();
+        return mTexture;
     }
 
     public void attachAnother() {
-        mSurfaceTexture.attach();
+        mTexture.onCreate();
     }
 
     public void detachAnother() {
-        mSurfaceTexture.detach();
+        mTexture.onDestroy();
     }
 
     public void attach() {
-        WaitResult attach;
-        synchronized (mLock) {
-            if (mAttach != null) {
-                attach = mAttach;
-            } else {
-                attach = mAttach = new WaitResult();
-            }
-        }
-        attach.getResult();
+        mAttachEvents.attach();
     }
 
     public void detach() {
-        WaitResult detach;
-        synchronized (mLock) {
-            if (mDetach != null) {
-                detach = mDetach;
-            } else {
-                detach = mDetach = new WaitResult();
-            }
-        }
-        detach.getResult();
+        mAttachEvents.detach();
     }
 
     @Override
     public void onCreate() {
         synchronized (mLock) {
-            mSurfaceTexture.onCreate(mDefaultBufferSize);
-            mAttached = true;
+            mTexture.onCreate();
+            mTexture.setDefaultBufferSize(mDefaultBufferSize);
+            mAttachEvents.setAttached(true);
         }
         mCallback.onCreate();
     }
 
     @Override
     public void onDraw(BaseTextureInput ... inputs) {
-        synchronized (mLock) {
-            if (mAttach != null) {
-                mSurfaceTexture.attach();
-                mAttach.setResult(null);
-                mAttach = null;
-                mAttached = true;
-            }
-            if (mDetach != null) {
-                mSurfaceTexture.detach();
-                mDetach.setResult(null);
-                mDetach = null;
-                mAttached = false;
-            }
-            if (mAttached) {
-                mCallback.onDraw(mSurfaceTexture.getTexture());
-            }
+        mAttachEvents.handleEvents(mAttachEventsCallback);
+        if (mAttachEvents.isAttached()) {
+            mCallback.onDraw(mTexture);
         }
     }
 
@@ -105,11 +85,9 @@ public class SurfaceTextureRendererWrapper implements EglContextThread.Callback 
     public void onDestroy() {
         mCallback.onDestroy();
         synchronized (mLock) {
-            if (mAttached) {
-                mSurfaceTexture.onDestroy();
-                mAttached = false;
-            } else {
-                mSurfaceTexture.onDestroyForced();
+            if (mAttachEvents.isAttached()) {
+                mTexture.onDestroy();
+                mAttachEvents.setAttached(false);
             }
             mDefaultBufferSize = new Size(-1, -1);
         }

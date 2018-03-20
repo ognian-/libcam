@@ -17,7 +17,7 @@ import java.util.List;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import ogi.libgl.BaseTextureInput;
+import ogi.libcam.AttachEvents;
 import ogi.libcam.CaptureService;
 import ogi.libcam.PermissionsFragment;
 import ogi.libcam.PreviewRenderer;
@@ -59,14 +59,30 @@ public class SecondActivity extends AppCompatActivity {
     private void setupGLSurfaceView(final GLSurfaceView view) {
         view.setEGLContextClientVersion(2);
 
+        final AttachEvents attachEvents = new AttachEvents();
+        final AttachEvents.Callback callback = new AttachEvents.Callback() {
+            @Override
+            public void onAttach() {
+                mCapture.attachAnotherContext();
+            }
+
+            @Override
+            public void onDetach() {
+                mCapture.attachOriginalContext();
+            }
+        };
+
+        view.setTag(attachEvents);
+
         try {
             view.setRenderer(new PreviewRenderer(getAssets()) {
+
                 @Override
                 public void onDrawFrame(GL10 gl) {
                     if (mCapture != null) {
-                        BaseTextureInput texture = mCapture.getTexture();
-                        if (texture != null) {
-                            onDraw(texture);
+                        attachEvents.handleEvents(callback);
+                        if (attachEvents.isAttached()) {
+                            onDraw(mCapture.getTexture());
                         }
                     }
                 }
@@ -80,36 +96,16 @@ public class SecondActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (mCurrent == view) {
+                    attachEvents.detach();
                     mCurrent = null;
-                    view.queueEvent(new Runnable() {
-                        @Override
-                        public void run() {
-                            mCapture.attachOriginalContext();
-                        }
-                    });
-                    return;
-                }
-
-                final Runnable activate = new Runnable() {
-                    @Override
-                    public void run() {
-                        mCapture.attachAnotherContext();
-                    }
-                };
-
-                if (mCurrent != null) {
-                    mCurrent.queueEvent(new Runnable() {
-                        @Override
-                        public void run() {
-                            mCapture.attachOriginalContext();
-                            view.queueEvent(activate);
-                        }
-                    });
+                } else if (mCurrent != null) {
+                    ((AttachEvents)mCurrent.getTag()).detach();
+                    attachEvents.attach();
+                    mCurrent = view;
                 } else {
-                    view.queueEvent(activate);
+                    attachEvents.attach();
+                    mCurrent = view;
                 }
-
-                mCurrent = view;
             }
         });
 
@@ -236,11 +232,11 @@ public class SecondActivity extends AppCompatActivity {
                             done.run();
                         }
                     }).setNegativeButton("Close", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            finish();
-                        }
-                    }).show();
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    finish();
+                }
+            }).show();
         }
 
     };

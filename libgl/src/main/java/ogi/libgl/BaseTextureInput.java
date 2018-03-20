@@ -2,16 +2,18 @@ package ogi.libgl;
 
 import android.opengl.GLES20;
 
+import java.io.Closeable;
+
 import ogi.libgl.util.CheckThread;
 import ogi.libgl.util.GLHelper;
 
 import static ogi.libgl.util.GLHelper.glCheck;
 
-public abstract class BaseTextureInput {
+public abstract class BaseTextureInput implements Closeable {
 
     private static final String TAG = "LibGL";
 
-    private final CheckThread mCheckThread = new CheckThread();
+    protected final CheckThread mCheckThread = new CheckThread();
     private int mTextureId = -1;
     private final float[] mTexCoordsMatrix = new float[16];
 
@@ -21,11 +23,15 @@ public abstract class BaseTextureInput {
     protected abstract void getTexCoordsMatrix(float[] matrix);
     protected abstract void releaseTexImage();
 
-    public int onCreate() {
+    protected final int getTextureId() {
+        mCheckThread.check();
+        return mTextureId;
+    }
+
+    public void onCreate() {
         mCheckThread.init();
         if (mTextureId != -1) throw new IllegalStateException("Must destroy first");
         mTextureId = genTextureId();
-        return mTextureId;
     }
 
     public void onDraw(int uniformTexture, int uniformMatrix, int textureSlot) {
@@ -55,6 +61,10 @@ public abstract class BaseTextureInput {
         } finally {
             mTextureId = -1;
         }
+    }
+
+    @Override
+    public void close() {
     }
 
 }
