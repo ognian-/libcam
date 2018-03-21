@@ -6,6 +6,7 @@ import android.opengl.Matrix;
 import java.nio.FloatBuffer;
 
 import ogi.libgl.BaseTextureInput;
+import ogi.libgl.util.CheckThread;
 import ogi.libgl.util.GLHelper;
 
 import static ogi.libgl.util.GLHelper.glCheck;
@@ -16,6 +17,8 @@ public class Pass {
 
     private final String mVertexSource;
     private final String mFragmentSource;
+
+    private final CheckThread mCheckThread = new CheckThread();
 
     private int mProgram = -1;
 
@@ -35,6 +38,7 @@ public class Pass {
     }
 
     public void onCreate() {
+        mCheckThread.init();
         mProgram = GLHelper.buildProgram(mVertexSource, mFragmentSource);
 
         mUniformPositionMatrix = GLES20.glGetUniformLocation(mProgram, "uPositionMatrix"); glCheck();
@@ -50,6 +54,7 @@ public class Pass {
     }
 
     public void onDraw(BaseTextureInput... inputs) {
+        mCheckThread.check();
         GLES20.glUseProgram(mProgram); glCheck();
 
         GLES20.glUniformMatrix4fv(mUniformPositionMatrix, 1, false, mPositionMatrix, 0); glCheck();
@@ -68,8 +73,9 @@ public class Pass {
     }
 
     public void onDestroy() {
+        mCheckThread.deinit(false);
         if (mProgram != -1) {
-            GLES20.glDeleteProgram(mProgram);
+            GLES20.glDeleteProgram(mProgram); glCheck();
             mProgram = -1;
         }
 

@@ -12,13 +12,13 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <ogi.libcam.DestroyableGLSurfaceView
+        <SurfaceView
             android:id="@+id/gl1"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"/>
 
-        <ogi.libcam.DestroyableGLSurfaceView
+        <SurfaceView
             android:id="@+id/gl2"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -32,13 +32,13 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <ogi.libcam.DestroyableGLSurfaceView
+        <SurfaceView
             android:id="@+id/gl3"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"/>
 
-        <ogi.libcam.DestroyableGLSurfaceView
+        <SurfaceView
             android:id="@+id/gl4"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"

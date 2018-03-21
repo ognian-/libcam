@@ -36,14 +36,14 @@ public class EglContextThread {
     private EGLContext mEglContext = EGL14.EGL_NO_CONTEXT;
     private EGLSurface mEglSurface = EGL14.EGL_NO_SURFACE;
 
-    public EglContextThread(Callback callback, Object window) {
+    public EglContextThread(String name, Callback callback, Object window) {
         mCallback = callback;
-        startThread(window, null);
+        startThread(name, window, null);
     }
 
-    public EglContextThread(Callback callback, Size size) {
+    public EglContextThread(String name, Callback callback, Size size) {
         mCallback = callback;
-        startThread(null, size);
+        startThread(name, null, size);
     }
 
     public void release() {
@@ -51,7 +51,7 @@ public class EglContextThread {
         mStopResult.getResult();
     }
 
-    private void startThread(final Object window, final Size pbufferSize) {
+    private void startThread(String name, final Object window, final Size pbufferSize) {
         final WaitResult created = new WaitResult();
         new Thread(new Runnable() {
             @Override
@@ -81,7 +81,7 @@ public class EglContextThread {
                     }
                 }
             }
-        }, "EglContextThread").start();
+        }, "EglContextThread-" + name).start();
         created.getResult();
     }
 

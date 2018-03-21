@@ -5,22 +5,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.view.SurfaceView;
 import android.view.View;
 
 import java.io.IOException;
 import java.util.List;
 
-import javax.microedition.khronos.opengles.GL10;
-
 import ogi.libcam.AttachEvents;
 import ogi.libcam.CaptureService;
 import ogi.libcam.PermissionsFragment;
 import ogi.libcam.PreviewRenderer;
+import ogi.libgl.BaseTextureInput;
+import ogi.libgl.context.EglSurfaceHolderCallback;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,11 +30,11 @@ public class MainActivity extends AppCompatActivity {
     private CaptureService.CaptureServiceBinder mCapture;
     private final Object mCaptureLock = new Object();
 
-    private GLSurfaceView mGL1;
-    private GLSurfaceView mGL2;
-    private GLSurfaceView mGL3;
-    private GLSurfaceView mGL4;
-    private GLSurfaceView mCurrent;
+    private SurfaceView mGL1;
+    private SurfaceView mGL2;
+    private SurfaceView mGL3;
+    private SurfaceView mGL4;
+    private SurfaceView mCurrent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,29 +47,19 @@ public class MainActivity extends AppCompatActivity {
         mGL3 = findViewById(R.id.gl3);
         mGL4 = findViewById(R.id.gl4);
 
-        setupGLSurfaceView(mGL1, 1);
-        setupGLSurfaceView(mGL2, 2);
-        setupGLSurfaceView(mGL3, 3);
-        setupGLSurfaceView(mGL4, 4);
+        setupSurfaceView(mGL1, 1);
+        setupSurfaceView(mGL2, 2);
+        setupSurfaceView(mGL3, 3);
+        setupSurfaceView(mGL4, 4);
 
         PermissionsFragment.attach(MainActivity.this, mPermissionsListener, "cam_perm");
 
     }
 
-    private void setupGLSurfaceView(final GLSurfaceView view, final int num) {
-        view.setEGLContextClientVersion(2);
+    private void setupSurfaceView(final SurfaceView view, final int num) {
 
-        final AttachEvents attachEvents = new AttachEvents() {
-            @Override
-            public void attach() {
-                super.attach();
-            }
 
-            @Override
-            public void detach() {
-                super.detach();
-            }
-        };
+        final AttachEvents attachEvents = new AttachEvents();
         final AttachEvents.Callback callback = new AttachEvents.Callback() {
             @Override
             public void onAttach() {
@@ -85,22 +75,21 @@ public class MainActivity extends AppCompatActivity {
         view.setTag(attachEvents);
 
         try {
-            view.setRenderer(new PreviewRenderer(getAssets()) {
-
+            final EglSurfaceHolderCallback shCallback = new EglSurfaceHolderCallback("MainActivity-" + num, new PreviewRenderer(getAssets()) {
                 @Override
-                public void onDrawFrame(GL10 gl) {
+                public void onDraw(BaseTextureInput... inputs) {
                     if (mCapture != null) {
                         attachEvents.handleEvents(callback);
                         if (attachEvents.isAttached()) {
-                            onDraw(mCapture.getTexture());
+                            super.onDraw(mCapture.getTexture());
                         }
                     }
                 }
             });
+            view.getHolder().addCallback(shCallback);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
         view.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -159,20 +148,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        mGL1.onResume();
-        mGL2.onResume();
-        mGL3.onResume();
-        mGL4.onResume();
-        if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).attach();
+        //if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).attach();
     }
 
     @Override
     protected void onPause() {
         if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).detach();
-        mGL1.onPause();
-        mGL2.onPause();
-        mGL3.onPause();
-        mGL4.onPause();
+        mCurrent = null;
         super.onPause();
     }
 

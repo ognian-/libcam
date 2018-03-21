@@ -11,6 +11,8 @@ import ogi.libgl.util.WaitResult;
 
 public class TextureExternalInput extends BaseTextureInput {
 
+    private static final String TAG = "LibGL";
+
     private SurfaceTexture mSurfaceTexture;
     private Surface mSurface;
 

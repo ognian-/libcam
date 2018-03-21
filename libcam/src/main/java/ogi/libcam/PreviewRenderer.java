@@ -4,14 +4,11 @@ import android.content.res.AssetManager;
 
 import java.io.IOException;
 
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-
 import ogi.libgl.BaseTextureInput;
 import ogi.libgl.context.EglContextThread;
 import ogi.libgl.util.GLHelper;
 
-public class PreviewRenderer implements EglContextThread.Callback, DestroyableGLSurfaceView.DestroyableRenderer {
+public class PreviewRenderer implements EglContextThread.Callback {
 
     private final Pass mBlit;
 
@@ -26,6 +23,7 @@ public class PreviewRenderer implements EglContextThread.Callback, DestroyableGL
 
     @Override
     public void onDraw(BaseTextureInput... inputs) {
+        if (inputs == null || inputs.length < 1) throw new IllegalArgumentException("Must provide the input texture");
         mBlit.onDraw(inputs[0]);
     }
 
@@ -34,16 +32,4 @@ public class PreviewRenderer implements EglContextThread.Callback, DestroyableGL
         mBlit.onDestroy();
     }
 
-    @Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        onCreate();
-    }
-
-    @Override
-    public void onSurfaceChanged(GL10 gl, int width, int height) {
-    }
-
-    @Override
-    public void onDrawFrame(GL10 gl) {
-    }
 }
