@@ -29,6 +29,7 @@ public class AttachEvents {
     public void attach() {
         WaitResult attach;
         synchronized (mLock) {
+            if (mAttached) return;
             if (mAttach != null) {
                 attach = mAttach;
             } else {
@@ -41,6 +42,7 @@ public class AttachEvents {
     public void detach() {
         WaitResult detach;
         synchronized (mLock) {
+            if (!mAttached) return;
             if (mDetach != null) {
                 detach = mDetach;
             } else {

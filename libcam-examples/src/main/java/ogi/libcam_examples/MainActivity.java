@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
@@ -85,7 +86,19 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 }
-            });
+            }) {
+                @Override
+                public void surfaceCreated(SurfaceHolder surfaceHolder) {
+                    super.surfaceCreated(surfaceHolder);
+                    mGL1.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            //TODO
+                            if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).attach();
+                        }
+                    }, 1);
+                }
+            };
             view.getHolder().addCallback(shCallback);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -146,15 +159,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        //if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).attach();
-    }
-
-    @Override
     protected void onPause() {
         if (mCurrent != null) ((AttachEvents)mCurrent.getTag()).detach();
-        mCurrent = null;
         super.onPause();
     }
 
