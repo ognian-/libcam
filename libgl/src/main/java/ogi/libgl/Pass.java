@@ -1,11 +1,10 @@
-package ogi.libcam;
+package ogi.libgl;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
 import java.nio.FloatBuffer;
 
-import ogi.libgl.BaseTextureInput;
 import ogi.libgl.util.CheckThread;
 import ogi.libgl.util.GLHelper;
 
@@ -13,7 +12,7 @@ import static ogi.libgl.util.GLHelper.glCheck;
 
 public class Pass {
 
-    private static final String TAG = "LibCam";
+    private static final String TAG = "LibGL";
 
     private final String mVertexSource;
     private final String mFragmentSource;

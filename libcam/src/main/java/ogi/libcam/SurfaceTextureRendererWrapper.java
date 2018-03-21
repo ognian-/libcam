@@ -4,6 +4,7 @@ import android.util.Size;
 import android.view.Surface;
 
 import ogi.libgl.BaseTextureInput;
+import ogi.libgl.TextureExternalInput;
 import ogi.libgl.context.EglContextThread;
 
 public class SurfaceTextureRendererWrapper implements EglContextThread.Callback {

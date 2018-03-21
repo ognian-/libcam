@@ -5,6 +5,7 @@ import android.content.res.AssetManager;
 import java.io.IOException;
 
 import ogi.libgl.BaseTextureInput;
+import ogi.libgl.Pass;
 import ogi.libgl.context.EglContextThread;
 import ogi.libgl.util.GLHelper;
 

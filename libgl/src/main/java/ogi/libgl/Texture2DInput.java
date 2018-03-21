@@ -1,9 +1,8 @@
-package ogi.libcam;
+package ogi.libgl;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
-import ogi.libgl.BaseTextureInput;
 import ogi.libgl.util.GLHelper;
 
 public class Texture2DInput extends BaseTextureInput {

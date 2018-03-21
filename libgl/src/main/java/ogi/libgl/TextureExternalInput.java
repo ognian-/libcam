@@ -1,11 +1,10 @@
-package ogi.libcam;
+package ogi.libgl;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.util.Size;
 import android.view.Surface;
 
-import ogi.libgl.BaseTextureInput;
 import ogi.libgl.util.GLHelper;
 import ogi.libgl.util.WaitResult;
 
